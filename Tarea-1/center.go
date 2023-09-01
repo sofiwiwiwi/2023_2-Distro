@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -25,9 +24,9 @@ func generateID() int64 {
 }
 
 func (s *server) create(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
-	fmt.Println(req.Qty)
 	return &pb.AvailableKeysReq{
-		Id: req.Id,
+		Id:  0,
+		Qty: 150,
 	}, nil
 }
 
@@ -51,15 +50,18 @@ func main() {
 		log.Fatal(pu_err)
 	}
 
-	var keys = rand.Int63n(upper_int-lower_int) + lower_int
-	listner, s_err := net.Listen("tcp", "50001")
+	// var keys = rand.Int63n(upper_int-lower_int) + lower_int
+	listner, s_err := net.Listen("tcp", ":50051")
 
 	if s_err != nil {
 		log.Fatal("Cant create tcp connection")
 	}
 
-	server := grpc.NewServer()
-	notify_servers(keys)
+	serv := grpc.NewServer()
+	pb.RegisterNotifyKeysServer(serv, &server{})
+	if s_err = serv.Serve(listner); s_err != nil {
+		log.Fatal("can't initialize server" + s_err.Error())
+	}
 }
 
 func notify_servers(keys int64) {
