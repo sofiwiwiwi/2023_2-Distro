@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -23,7 +24,8 @@ func generateID() int64 {
 	return max_id
 }
 
-func (s *server) create(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
+func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
+	fmt.Println("Message received")
 	return &pb.AvailableKeysReq{
 		Id:  0,
 		Qty: 150,
@@ -50,7 +52,7 @@ func main() {
 		log.Fatal(pu_err)
 	}
 
-	// var keys = rand.Int63n(upper_int-lower_int) + lower_int
+	var keys = rand.Int63n(upper_int-lower_int) + lower_int
 	listner, s_err := net.Listen("tcp", ":50051")
 
 	if s_err != nil {
@@ -59,9 +61,12 @@ func main() {
 
 	serv := grpc.NewServer()
 	pb.RegisterNotifyKeysServer(serv, &server{})
+	fmt.Println("Waiting for messages...")
 	if s_err = serv.Serve(listner); s_err != nil {
 		log.Fatal("can't initialize server" + s_err.Error())
 	}
+
+	fmt.Println(keys)
 }
 
 func notify_servers(keys int64) {
