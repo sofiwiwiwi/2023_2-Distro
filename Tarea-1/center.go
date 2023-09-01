@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	pb "protofiles"
+	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
 
 	"google.golang.org/grpc"
 )
@@ -24,10 +24,10 @@ func generateID() int64 {
 	return max_id
 }
 
-func (s *server) create(ctx context.Context, req *pb.AvailableKeys) (*pb.KeysResponse, error) {
+func (s *server) create(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
 	fmt.Println(req.Qty)
-	return &pb.KeysResponse{
-		Id: req.AvailableKeys.Id(),
+	return &pb.AvailableKeysReq{
+		Id: req.Id,
 	}, nil
 }
 

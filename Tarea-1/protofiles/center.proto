@@ -1,15 +1,12 @@
 syntax = "proto3";
 package protofiles;
-option go_package = "./";
+option go_package = "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles";
 
-message AvailableKeys{
-    int64 qty = 1;
-}
-
-message KeysResponse{
+message AvailableKeysReq{
     int64 id = 1;
+    int64 qty = 2;
 }
 
 service NotifyKeys {
-    rpc SendKeys(AvailableKeys) returns (KeysResponse);
+    rpc SendKeys(AvailableKeysReq) returns (AvailableKeysReq);
 }
