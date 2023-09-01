@@ -1,0 +1,15 @@
+syntax = "proto3";
+package protofiles;
+option go_package = "./";
+
+message AvailableKeys{
+    int64 qty = 1;
+}
+
+message KeysResponse{
+    int64 id = 1;
+}
+
+service NotifyKeys {
+    rpc SendKeys(AvailableKeys) returns (KeysResponse);
+}
