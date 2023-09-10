@@ -10,3 +10,16 @@ message AvailableKeysReq{
 service NotifyKeys {
     rpc SendKeys(AvailableKeysReq) returns (AvailableKeysReq);
 }
+
+//notificacion para ver cuantas keys quedaron
+service FinalNotification {
+  rpc NotifyRegional(FinalNotifyRequest) returns (FinalNotifyResponse);
+}
+
+message FinalNotifyRequest {
+  int32 NumberOfUsersFailed = 1;
+}
+
+message FinalNotifyResponse {
+  string message = 1;
+}

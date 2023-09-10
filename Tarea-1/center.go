@@ -17,6 +17,7 @@ import (
 
 type server struct {
 	pb.UnimplementedNotifyKeysServer
+	pb.UnimplementedFinalNotificationServer
 }
 
 func generateID() int64 {
@@ -30,6 +31,15 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Av
 		Id:  0,
 		Qty: 150,
 	}, nil
+}
+
+func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) {
+	numberOfUsersFailed := 0 //aca va el numero de usuarios que no pudieron entrar, aun no se como calcularlo
+	response := &pb.FinalNotifyResponse{
+		Message: fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed),
+	}
+
+	return response, nil
 }
 
 var max_id int64
@@ -61,6 +71,7 @@ func main() {
 
 	serv := grpc.NewServer()
 	pb.RegisterNotifyKeysServer(serv, &server{})
+	pb.RegisterFinalNotificationServer(serv, &server{})
 	fmt.Println("Waiting for messages...")
 	if s_err = serv.Serve(listner); s_err != nil {
 		log.Fatal("can't initialize server" + s_err.Error())
@@ -70,7 +81,6 @@ func main() {
 }
 
 func notify_servers(keys int64) {
-
 	fmt.Println("INFORMACION SOBRE LAS LLAVES ")
 	return
 }
