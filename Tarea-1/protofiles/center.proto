@@ -1,0 +1,25 @@
+syntax = "proto3";
+package protofiles;
+option go_package = "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles";
+
+message AvailableKeysReq{
+    int64 id = 1;
+    int64 qty = 2;
+}
+
+service NotifyKeys {
+    rpc SendKeys(AvailableKeysReq) returns (AvailableKeysReq);
+}
+
+//notificacion para ver cuantas keys quedaron
+service FinalNotification {
+  rpc NotifyRegional(FinalNotifyRequest) returns (FinalNotifyResponse);
+}
+
+message FinalNotifyRequest {
+  int32 NumberOfUsersFailed = 1;
+}
+
+message FinalNotifyResponse {
+  string message = 1;
+}
