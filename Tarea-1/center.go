@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/streadway/amqp"
+
 	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
 )
 
@@ -85,6 +87,35 @@ func main() {
 	if r_err != nil {
 		log.Fatal(r_err)
 	}
+
+	// Connect with Rabbit Queue
+	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+
+	if rabbit_err != nil {
+		fmt.Println(rabbit_err)
+		panic(err)
+	}
+
+	ch, err := rabbit_conn.Channel()
+	if err != nil {
+		fmt.Println(rabbit_err)
+	}
+
+	defer ch.Close()
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	msgs, err := ch.Consume(
+		"TestQueue",
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
 
 	// Establish grpc connection.
 	// listner, s_err := net.Listen("tcp", ":50051")

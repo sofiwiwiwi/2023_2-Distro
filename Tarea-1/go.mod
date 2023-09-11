@@ -3,6 +3,7 @@ module github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1
 go 1.21.0
 
 require (
+	github.com/streadway/amqp v1.1.0
 	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 )
