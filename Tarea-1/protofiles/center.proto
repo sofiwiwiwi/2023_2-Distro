@@ -3,12 +3,15 @@ package protofiles;
 option go_package = "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles";
 
 message AvailableKeysReq{
-    int64 id = 1;
     int64 qty = 2;
 }
 
+message AvailableKeysResp{
+    string server_name = 1;
+}
+
 service NotifyKeys {
-    rpc SendKeys(AvailableKeysReq) returns (AvailableKeysReq);
+    rpc SendKeys(AvailableKeysReq) returns (server_name);
 }
 
 //notificacion para ver cuantas keys quedaron

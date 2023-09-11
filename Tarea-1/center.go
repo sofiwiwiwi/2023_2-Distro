@@ -1,18 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"math/rand"
-	"net"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
-
-	"google.golang.org/grpc"
 )
 
 type server struct {
@@ -26,6 +25,8 @@ func generateID() int64 {
 }
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
+	// Los regionales deberían responder con su nombre solamente
+
 	fmt.Println("Message received")
 	return &pb.AvailableKeysReq{
 		Id:  0,
@@ -45,15 +46,35 @@ func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest)
 var max_id int64
 
 func main() {
-	var f, err = os.ReadFile("parametros_de_inicio.txt")
+	var register_f, register_err = os.Create("registro_flujo.txt")
+	if register_err != nil {
+		log.Fatal(register_err)
+	}
+
+	defer register_f.Close()
+
+	var f, err = os.Open("parametros_de_inicio.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var interval = strings.Split(string(f), "-")
+	var fileScanner = bufio.NewScanner(f)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	// Read key interval
+	fileScanner.Scan()
+	var interval = strings.Split(fileScanner.Text(), "-")
 	var lower, upper = interval[0], interval[1]
 	var lower_int, pl_err = strconv.ParseInt(lower, 0, 0)
 	var upper_int, pu_err = strconv.ParseInt(upper, 0, 0)
+
+	// Read Rounds interval
+	fileScanner.Scan()
+	var rounds = fileScanner.Text()
+	var rounds_int, r_err = strconv.ParseInt(rounds, 0, 0)
+
+	f.Close()
 
 	if pl_err != nil {
 		log.Fatal(pl_err)
@@ -61,28 +82,64 @@ func main() {
 	if pu_err != nil {
 		log.Fatal(pu_err)
 	}
-
-	var keys = rand.Int63n(upper_int-lower_int) + lower_int
-	listner, s_err := net.Listen("tcp", ":50051")
-
-	if s_err != nil {
-		log.Fatal("Cant create tcp connection")
+	if r_err != nil {
+		log.Fatal(r_err)
 	}
 
-	serv := grpc.NewServer()
-	pb.RegisterNotifyKeysServer(serv, &server{})
-	pb.RegisterFinalNotificationServer(serv, &server{})
-	fmt.Println("Waiting for messages...")
-	if s_err = serv.Serve(listner); s_err != nil {
-		log.Fatal("can't initialize server" + s_err.Error())
+	// Establish grpc connection.
+	// listner, s_err := net.Listen("tcp", ":50051")
+
+	// if s_err != nil {
+	// 	log.Fatal("Cant create tcp connection")
+	// }
+
+	// serv := grpc.NewServer()
+	// pb.RegisterNotifyKeysServer(serv, &server{})
+	// pb.RegisterFinalNotificationServer(serv, &server{})
+
+	for i := 1; i <= int(rounds_int); i++ {
+		fmt.Println("Generación ", i, "/", rounds_int)
+		var keys = int(rand.Int63n(upper_int-lower_int) + lower_int)
+
+		notify_servers(keys, register_f)
+
+		upper_int -= 10
+		lower_int -= 10
+
+		// Recibe weas por RabbitMQ
+		// Registra los que pudieron entrar a la beta
+		// Resta del intervalo conocido
+
+		forever := make(chan bool)
+		go func() {
+			for d := range msgs {
+				fmt.Printf("Recieved message: %s\n", d.Body)
+			}
+		}()
+		fmt.Println("Successefully connected to our rabbitmq instance")
+		fmt.Println(" [*] - Waiting for messages")
+		<-forever
+
 	}
-
-	// Escribir las horas
-
-	fmt.Println(keys)
 }
 
-func notify_servers(keys int64) {
-	fmt.Println("INFORMACION SOBRE LAS LLAVES ")
+// // Escribir las horas
+
+func notify_servers(keys int, register_f *os.File) {
+	// Escribir llaves generadas
+	// FORMATO:
+	// HORA - LLAVES GENERADAS
+	// 		Servidor Regional - Llaves Solicitadas - Usuarios Registrados - Usuarios No Registrados
+	hr, min, _ := time.Now().Clock()
+	var hour_s = fmt.Sprintf("%d : %d", hr, min)
+	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
+	if l_err != nil {
+		log.Fatal(l_err)
+	}
+
+	// fmt.Println("Waiting for messages...")
+	// if s_err = serv.Serve(listner); s_err != nil {
+	// 	log.Fatal("can't initialize server" + s_err.Error())
+	// }
 	return
 }
