@@ -25,7 +25,7 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 
 	func() { // ver si podemos quitar el chan
 		for d := range msgs {
-			fmt.Printf("Mensaje asíncrono: %s de servidor leído\n", d.Body)
+			fmt.Printf("Mensaje asíncrono: de servidor %s leído\n", d.Body)
 			msg_count++
 
 			if msg_count >= max_msgs {
