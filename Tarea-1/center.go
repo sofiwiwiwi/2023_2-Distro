@@ -12,30 +12,10 @@ import (
 	"time"
 
 	"github.com/streadway/amqp"
+	"google.golang.org/grpc"
 
 	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
 )
-
-// // Escribir las horas
-
-func notify_servers(keys int, register_f *os.File) {
-	// Escribir llaves generadas
-	// FORMATO:
-	// HORA - LLAVES GENERADAS
-	// 		Servidor Regional - Llaves Solicitadas - Usuarios Registrados - Usuarios No Registrados
-	hr, min, _ := time.Now().Clock()
-	var hour_s = fmt.Sprintf("%d : %d", hr, min)
-	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
-	if l_err != nil {
-		log.Fatal(l_err)
-	}
-
-	// fmt.Println("Waiting for messages...")
-	// if s_err = serv.Serve(listner); s_err != nil {
-	// 	log.Fatal("can't initialize server" + s_err.Error())
-	// }
-	return
-}
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
 	msg_count := 0
@@ -56,6 +36,66 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 	}()
 }
 
+func send_keys_to_all(keys int, conn_asia *grpc.ClientConn, conn_europe *grpc.ClientConn,
+	conn_oceania *grpc.ClientConn, conn_america *grpc.ClientConn) {
+
+	hr, min, _ := time.Now().Clock()
+	var hour_s = fmt.Sprintf("%d : %d", hr, min)
+	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
+	if l_err != nil {
+		log.Fatal(l_err)
+	}
+	var clients = [4]*grpc.ClientConn{conn_asia, conn_europe, conn_oceania, conn_america}
+
+	for _, conn := range clients {
+		this_client := pb.NewNotifyKeysClient(conn)
+		_, l_client_err := this_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
+			Id:  1,
+			Qty: 5, // reemplazar con keys
+		})
+		if l_client_err != nil {
+			log.Fatal("Couldn't send keys to Asia: ", l_client_err)
+		}
+	}
+
+	// BORRAR LUEGO DE TESTEAR
+	// asia_client := pb.NewNotifyKeysClient(conn_asia)
+	// _, l_asia_err := asia_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
+	// 	Id:  1,
+	// 	Qty: 5,
+	// })
+	// if l_asia_err != nil {
+	// 	log.Fatal("Couldn't send keys to Asia: ", l_asia_err)
+	// }
+
+	// europe_client := pb.NewNotifyKeysClient(conn_europe)
+	// _, l_europe_err := europe_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
+	// 	Id:  1,
+	// 	Qty: 5,
+	// })
+	// if l_europe_err != nil {
+	// 	log.Fatal("Couldn't send keys to Europe: ", l_europe_err)
+	// }
+
+	// oceania_client := pb.NewNotifyKeysClient(conn_oceania)
+	// _, l_oceania_err := oceania_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
+	// 	Id:  1,
+	// 	Qty: 5,
+	// })
+	// if l_oceania_err != nil {
+	// 	log.Fatal("Couldn't send keys to Asia: ", l_oceania_err)
+	// }
+
+	// america_client := pb.NewNotifyKeysClient(conn_america)
+	// _, l_america_err := america_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
+	// 	Id:  1,
+	// 	Qty: 5,
+	// })
+	// if l_america_err != nil {
+	// 	log.Fatal("Couldn't send keys to Asia: ", l_america_err)
+	// }
+}
+
 type server struct {
 	pb.UnimplementedNotifyKeysServer
 	pb.UnimplementedFinalNotificationServer
@@ -63,7 +103,6 @@ type server struct {
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
 	// Los regionales deberían responder con su nombre solamente
-
 	fmt.Println("Message received")
 	return &pb.AvailableKeysReq{
 		Id:  0,
@@ -80,10 +119,9 @@ func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest)
 	return response, nil
 }
 
-var max_id int64
+var register_f, register_err = os.Create("registro_flujo.txt")
 
 func main() {
-	var register_f, register_err = os.Create("registro_flujo.txt")
 	if register_err != nil {
 		log.Fatal(register_err)
 	}
@@ -125,7 +163,6 @@ func main() {
 
 	// Connect with Rabbit Queue
 	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-
 	if rabbit_err != nil {
 		fmt.Println(rabbit_err)
 		panic(err)
@@ -137,10 +174,6 @@ func main() {
 	}
 
 	defer ch.Close()
-
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	msgs, err := ch.Consume(
 		"TestQueue",
@@ -162,12 +195,30 @@ func main() {
 	// serv := grpc.NewServer()
 	// pb.RegisterNotifyKeysServer(serv, &server{})
 	// pb.RegisterFinalNotificationServer(serv, &server{})
+
+	conn_asia, con_asia_err := grpc.Dial(":50051", grpc.WithInsecure())
+	if con_asia_err != nil {
+		log.Fatal("Can't connect to Asia server: ", con_asia_err)
+	}
+	conn_europe, con_europe_err := grpc.Dial(":50051", grpc.WithInsecure())
+	if con_europe_err != nil {
+		log.Fatal("Can't connect to Asia server: ", con_europe_err)
+	}
+	conn_oceania, con_oceania_err := grpc.Dial(":50051", grpc.WithInsecure())
+	if con_oceania_err != nil {
+		log.Fatal("Can't connect to Asia server: ", con_oceania_err)
+	}
+	conn_america, con_america_err := grpc.Dial(":50051", grpc.WithInsecure())
+	if con_america_err != nil {
+		log.Fatal("Can't connect to Asia server: ", con_asia_err)
+	}
+
 	var i = rounds_int
 	for i != 0 {
 		fmt.Println("Generación ", i, "/", rounds_int)
 		var keys = int(rand.Int63n(upper_int-lower_int) + lower_int)
 
-		notify_servers(keys, register_f)
+		send_keys_to_all(keys, conn_asia, conn_europe, conn_oceania, conn_america)
 
 		upper_int -= 10
 		lower_int -= 10
