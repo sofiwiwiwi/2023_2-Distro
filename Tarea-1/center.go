@@ -127,8 +127,8 @@ func main() {
 	// serv := grpc.NewServer()
 	// pb.RegisterNotifyKeysServer(serv, &server{})
 	// pb.RegisterFinalNotificationServer(serv, &server{})
-
-	for i := 1; i <= int(rounds_int); i++ {
+	var i = rounds_int
+	for i != 0 {
 		fmt.Println("Generación ", i, "/", rounds_int)
 		var keys = int(rand.Int63n(upper_int-lower_int) + lower_int)
 
@@ -151,6 +151,9 @@ func main() {
 		fmt.Println(" [*] - Waiting for messages")
 		<-forever
 
+		if i > 0 {
+			i -= 1
+		}
 	}
 }
 
