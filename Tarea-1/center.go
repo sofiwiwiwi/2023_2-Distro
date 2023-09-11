@@ -77,6 +77,8 @@ func main() {
 		log.Fatal("can't initialize server" + s_err.Error())
 	}
 
+	// Escribir las horas
+
 	fmt.Println(keys)
 }
 
