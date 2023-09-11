@@ -16,14 +16,49 @@ import (
 	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
 )
 
+// // Escribir las horas
+
+func notify_servers(keys int, register_f *os.File) {
+	// Escribir llaves generadas
+	// FORMATO:
+	// HORA - LLAVES GENERADAS
+	// 		Servidor Regional - Llaves Solicitadas - Usuarios Registrados - Usuarios No Registrados
+	hr, min, _ := time.Now().Clock()
+	var hour_s = fmt.Sprintf("%d : %d", hr, min)
+	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
+	if l_err != nil {
+		log.Fatal(l_err)
+	}
+
+	// fmt.Println("Waiting for messages...")
+	// if s_err = serv.Serve(listner); s_err != nil {
+	// 	log.Fatal("can't initialize server" + s_err.Error())
+	// }
+	return
+}
+
+func receive_from_mq(msgs <-chan amqp.Delivery) {
+	msg_count := 0
+	max_msgs := 4
+
+	consume := make(chan bool)
+
+	func() {
+		for d := range msgs {
+			fmt.Printf("Mensaje asíncrono: %s de servidor leído\n", d.Body)
+			msg_count++
+
+			if msg_count >= max_msgs {
+				close(consume)
+				break
+			}
+		}
+	}()
+}
+
 type server struct {
 	pb.UnimplementedNotifyKeysServer
 	pb.UnimplementedFinalNotificationServer
-}
-
-func generateID() int64 {
-	max_id += 1
-	return max_id
 }
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
@@ -116,23 +151,7 @@ func main() {
 		false,
 		nil,
 	)
-	msg_count := 0
-	max_msgs := 4
 
-	consume := make(chan bool)
-
-	func() {
-		for d:= range msgs {
-			fmt.Printf("Mensaje asíncrono: %s de servidor leído\n", d.Body)
-			msg_count++
-
-			if msg_count >= max_msgs{
-				close(consume)
-				break
-			}
-		}
-	}()
-	
 	// Establish grpc connection.
 	// listner, s_err := net.Listen("tcp", ":50051")
 
@@ -153,43 +172,10 @@ func main() {
 		upper_int -= 10
 		lower_int -= 10
 
-		// Recibe weas por RabbitMQ
-		// Registra los que pudieron entrar a la beta
-		// Resta del intervalo conocido
-
-		forever := make(chan bool)
-		go func() {
-			for d := range msgs {
-				fmt.Printf("Recieved message: %s\n", d.Body)
-			}
-		}()
-		fmt.Println("Successefully connected to our rabbitmq instance")
-		fmt.Println(" [*] - Waiting for messages")
-		<-forever
+		receive_from_mq(msgs)
 
 		if i > 0 {
 			i -= 1
 		}
 	}
-}
-
-// // Escribir las horas
-
-func notify_servers(keys int, register_f *os.File) {
-	// Escribir llaves generadas
-	// FORMATO:
-	// HORA - LLAVES GENERADAS
-	// 		Servidor Regional - Llaves Solicitadas - Usuarios Registrados - Usuarios No Registrados
-	hr, min, _ := time.Now().Clock()
-	var hour_s = fmt.Sprintf("%d : %d", hr, min)
-	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
-	if l_err != nil {
-		log.Fatal(l_err)
-	}
-
-	// fmt.Println("Waiting for messages...")
-	// if s_err = serv.Serve(listner); s_err != nil {
-	// 	log.Fatal("can't initialize server" + s_err.Error())
-	// }
-	return
 }
