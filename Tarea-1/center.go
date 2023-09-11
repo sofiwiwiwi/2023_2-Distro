@@ -96,12 +96,12 @@ func send_keys_to_all(keys int, conn_asia *grpc.ClientConn, conn_europe *grpc.Cl
 	// }
 }
 
-type server struct {
+type server struct { // NO VA A IR
 	pb.UnimplementedNotifyKeysServer
 	pb.UnimplementedFinalNotificationServer
 }
 
-func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) {
+func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) { // NO VA A IR
 	// Los regionales deberían responder con su nombre solamente
 	fmt.Println("Message received")
 	return &pb.AvailableKeysReq{
@@ -110,7 +110,7 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Av
 	}, nil
 }
 
-func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) {
+func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) { // NO VA A IR
 	numberOfUsersFailed := 0 //aca va el numero de usuarios que no pudieron entrar, aun no se como calcularlo
 	response := &pb.FinalNotifyResponse{
 		Message: fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed),
