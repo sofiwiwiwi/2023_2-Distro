@@ -30,6 +30,6 @@ func main() {
 		false,
 		nil,
 	)
-
+	fmt.Println(q)
 	defer conn.Close()
 }

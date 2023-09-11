@@ -12,6 +12,7 @@ import (
 
 	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles"
 	"google.golang.org/grpc"
+	"github.com/streadway/amqp"
 )
 
 func main() {
@@ -33,7 +34,7 @@ func main() {
         }
         interesed_users += val
     }
-    while(interesed_users > 0){
+   while(interesed_users > 0){
 	    twtpercent := float64(interesed_users) / 2 * 0.2
 	    lower_int := int64(float64(interesed_users)/2 - twtpercent)
 	    upper_int := int64(float64(interesed_users)/2 + twtpercent)
@@ -56,8 +57,8 @@ func main() {
 			log.Fatal("Keys are not created" + l_err.Error())
 		}
 		fmt.Println("Llaves disponibles: " + strconv.FormatInt(res.Qty, 10))
-		//rabbitmq queue
-		// Connect with Rabbit Queue
+		rabbitmq queue
+		Connect with Rabbit Queue
 		rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 
 		if rabbit_err != nil {
@@ -73,14 +74,14 @@ func main() {
 		defer ch.Close()
 
 		msgs, send_mq_err := ch.Publish(
+			"",
 			"TestQueue",
-			"test",   			//chantar nombre de sevidor regional
-			SolicitedKeys, 		//numero de keys a solicitar
-			true,
 			false,
 			false,
-			false,
-			nil,
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte("Hello World"),
+			},
 		)
 
 		if send_mq_err != nil {
@@ -99,4 +100,43 @@ func main() {
 		interesed_users -= (SolicitedKeys - res2.Message)
 		log.Printf("Regional server response: %s", res2.Message)
 	}
+
+	//aquí la sofi testeo (no sé cómo estaba antes)
+	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+
+		if rabbit_err != nil {
+			fmt.Println(rabbit_err)
+			panic(rabbit_err)
+		}
+
+		ch, rab_con_err := rabbit_conn.Channel()
+		if rab_con_err != nil {
+			fmt.Println(rab_con_err)
+		}
+
+		defer ch.Close()
+		queueName := "TestQueue"
+		msgs_count := 4
+
+		for i := 0; i<msgs_count; i++{
+			messageBody := fmt.Sprintf("Mensaje número %d", i+1)
+			send_mq_err := ch.Publish(
+				"",
+				queueName,
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(messageBody),
+				},
+			)
+			
+			if send_mq_err != nil {
+				log.Printf("no se publicó el mensaje %d: %v", i+1, send_mq_err)
+			} else {
+				log.Printf("se publicó el mensaje %d: %s", i+1, messageBody)
+			}
+			time.Sleep(time.Second)
+		}
 }
+

@@ -128,7 +128,7 @@ func main() {
 
 	if rabbit_err != nil {
 		fmt.Println(rabbit_err)
-		panic(err)
+		panic(rabbit_err)
 	}
 
 	ch, err := rabbit_conn.Channel()
@@ -151,6 +151,7 @@ func main() {
 		false,
 		nil,
 	)
+	receive_from_mq(msgs)
 
 	// Establish grpc connection.
 	// listner, s_err := net.Listen("tcp", ":50051")
@@ -162,6 +163,8 @@ func main() {
 	// serv := grpc.NewServer()
 	// pb.RegisterNotifyKeysServer(serv, &server{})
 	// pb.RegisterFinalNotificationServer(serv, &server{})
+
+	
 	var i = rounds_int
 	for i != 0 {
 		fmt.Println("Generación ", i, "/", rounds_int)
