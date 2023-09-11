@@ -116,7 +116,23 @@ func main() {
 		false,
 		nil,
 	)
+	msg_count := 0
+	max_msgs := 4
 
+	consume := make(chan bool)
+
+	func() {
+		for d:= range msgs {
+			fmt.Printf("Mensaje asíncrono: %s de servidor leído\n", d.Body)
+			msg_count++
+
+			if msg_count >= max_msgs{
+				close(consume)
+				break
+			}
+		}
+	}()
+	
 	// Establish grpc connection.
 	// listner, s_err := net.Listen("tcp", ":50051")
 
