@@ -43,7 +43,7 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 
 	consume := make(chan bool)
 
-	func() {
+	func() { // ver si podemos quitar el chan
 		for d := range msgs {
 			fmt.Printf("Mensaje asíncrono: %s de servidor leído\n", d.Body)
 			msg_count++
