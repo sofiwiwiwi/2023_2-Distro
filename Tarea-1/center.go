@@ -165,7 +165,7 @@ func main() {
 	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if rabbit_err != nil {
 		fmt.Println(rabbit_err)
-		panic(err)
+		panic(rabbit_err)
 	}
 
 	ch, err := rabbit_conn.Channel()
@@ -184,6 +184,7 @@ func main() {
 		false,
 		nil,
 	)
+	receive_from_mq(msgs)
 
 	// Establish grpc connection.
 	// listner, s_err := net.Listen("tcp", ":50051")
