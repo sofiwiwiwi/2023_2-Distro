@@ -26,14 +26,20 @@ type server struct {
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	// Los regionales deberían responder con su nombre solamente
 	fmt.Println("Keys received")
-	serv.GracefulStop()
+	go func() {
+		time.Sleep(3)
+		serv.Stop()
+	}()
 	return &pb.Empty{}, nil
 }
 
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.Empty, error) {
 	keep_iterating = req.Continue
 	fmt.Println("Continue?: ", keep_iterating)
-	serv.GracefulStop()
+	go func() {
+		time.Sleep(3)
+		serv.Stop()
+	}()
 	return &pb.Empty{}, nil
 }
 

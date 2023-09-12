@@ -26,16 +26,22 @@ type server struct {
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	// Los regionales deberían responder con su nombre solamente
 	fmt.Println("Keys received")
+	go func() {
+		time.Sleep(3)
+		serv.Stop()
+	}()
 	return &pb.Empty{}, nil
 }
 
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.Empty, error) {
 	keep_iterating = req.Continue
 	fmt.Println("Continue?: ", keep_iterating)
-	serv.GracefulStop()
+	go func() {
+		time.Sleep(3)
+		serv.Stop()
+	}()
 	return &pb.Empty{}, nil
 }
-
 func start_grpc_server() {
 	// Establish grpc connection.
 	listner, s_err := net.Listen("tcp", ":50053")
@@ -74,6 +80,7 @@ func main() {
 	}
 	for interesed_users > 0 && keep_iterating {
 		start_grpc_server() // Wait for keys received
+
 		twtpercent := float64(interesed_users) / 2 * 0.2
 		lower_int := int64(float64(interesed_users)/2 - twtpercent)
 		upper_int := int64(float64(interesed_users)/2 + twtpercent)
