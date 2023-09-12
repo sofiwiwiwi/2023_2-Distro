@@ -10,7 +10,7 @@ import (
     "strconv"
     "time"
 
-	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles"
+	pb "Tarea-1/protofiles"
 	"google.golang.org/grpc"
 	"github.com/streadway/amqp"
 )

@@ -1,4 +1,4 @@
-module github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1
+module Tarea-1
 
 go 1.21.0
 
