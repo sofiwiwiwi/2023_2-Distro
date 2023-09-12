@@ -15,6 +15,7 @@ message ContinueServiceReq{
 
 service NotifyKeys {
     rpc SendKeys(AvailableKeysReq) returns (Empty);
+	rpc NotifyContinue(ContinueServiceReq) returns (Empty);
 }
 
 //notificacion para ver cuantas keys quedaron
