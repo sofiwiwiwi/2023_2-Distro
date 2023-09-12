@@ -5,6 +5,11 @@ option go_package = "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-
 message AvailableKeysReq{
     int32 keys = 1;
 }
+
+message FinalNotifyRequest {
+  int32 NumberOfUsersFailed = 1;
+}
+
 message Empty{
 
 }
@@ -19,13 +24,5 @@ service NotifyKeys {
 
 //notificacion para ver cuantas keys quedaron
 service FinalNotification {
-  rpc NotifyRegional(FinalNotifyRequest) returns (FinalNotifyResponse);
-}
-
-message FinalNotifyRequest {
-  int32 NumberOfUsersFailed = 1;
-}
-
-message FinalNotifyResponse {
-  string message = 1;
+  rpc NotifyRegional(FinalNotifyRequest) returns (Empty);
 }

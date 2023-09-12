@@ -15,11 +15,37 @@ import (
 	"github.com/streadway/amqp"
 )
 
+
+type server struct {
+	keysCount int64
+	keysReceived chan struct{}
+	usersFailed int64
+	usersfailedReceived chan struct{}
+	pb.UnimplementedNotifyKeysServer
+	pb.UnimplementedFinalNotificationServer
+}
+
+func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
+	fmt.Printf("Keys received: %d", int64(req.Keys))
+	s.keysCount += int64(req.Keys)
+	s.keysReceived <- struct{}{} // señal de que recibió keys
+	return &pb.Empty{}, nil
+}
+
+func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) {
+    s.UsersFailed := req.NumberOfUsersFailed
+    message := fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed)
+    fmt.Println(message)    
+	s.usersfailedReceived <- struct{}{} // señal de que recibió keys
+    return &pb.Empty{}, nil
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
     var interesed_users int64
 
+    //lectura inicio
 	var f, ar_err = os.Open("parametros_de_inicio.txt")
     if ar_err != nil {
         log.Fatal(ar_err)
@@ -34,109 +60,69 @@ func main() {
         }
         interesed_users += val
     }
-   while(interesed_users > 0){
+
+	//conexion rbmq
+    rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if rabbit_err != nil {
+		fmt.Println(rabbit_err)
+		panic(rabbit_err)
+	}
+
+	ch, rab_con_err := rabbit_conn.Channel()
+	if rab_con_err != nil {
+		fmt.Println(rab_con_err)
+	}
+	defer ch.Close()
+
+	//conexion grpc
+	listner, s_err := net.Listen("tcp", ":50051")
+
+	if s_err != nil {
+		log.Fatal("Cant create tcp connection")
+	}
+
+	serv := grpc.NewServer()
+	pb.RegisterNotifyKeysServer(serv, &server{})
+	pb.RegisterFinalNotificationServer(serv, &server{})
+
+
+    while(interesed_users > 0){
 	    twtpercent := float64(interesed_users) / 2 * 0.2
 	    lower_int := int64(float64(interesed_users)/2 - twtpercent)
 	    upper_int := int64(float64(interesed_users)/2 + twtpercent)
 	 	SolicitedKeys := rand.Int63n(upper_int-lower_int) + lower_int
 
-
-
-	 	//recieve avaible keys
-		conn, con_err := grpc.Dial(":50051", grpc.WithInsecure())
-		if con_err != nil {
-			log.Fatal("Can't connect to server: %v", con_err)
+	 	//recieve avaible keys ?
+		if s_err = serv.Serve(listner); s_err != nil {
+			log.Fatal("can't initialize server" + s_err.Error())
 		}
+		<-serv.keysReceived // wait until the things recieves a message
 
-		serviceClient := pb.NewNotifyKeysClient(conn)
-		res, l_err := serviceClient.SendKeys(context.Background(), &pb.AvailableKeysReq{
-			Id:  1,
-			Qty: 5,
-		})
-		if l_err != nil {
-			log.Fatal("Keys are not created" + l_err.Error())
-		}
-		fmt.Println("Llaves disponibles: " + strconv.FormatInt(res.Qty, 10))
-		rabbitmq queue
-		Connect with Rabbit Queue
-		rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-
-		if rabbit_err != nil {
-			fmt.Println(rabbit_err)
-			panic(err)
-		}
-
-		ch, rab_con_err := rabbit_conn.Channel()
-		if rab_con_err != nil {
-			fmt.Println(rab_con_err)
-		}
-
-		defer ch.Close()
-
-		msgs, send_mq_err := ch.Publish(
+		//rbmq sending thingy
+		queueName := "TestQueue"
+		messageBody := fmt.Sprintf("servidor de AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+		send_mq_err := ch.Publish(
 			"",
-			"TestQueue",
+			queueName,
 			false,
 			false,
 			amqp.Publishing{
 				ContentType: "text/plain",
-				Body:        []byte("Hello World"),
+				Body:        []byte(messageBody),
 			},
 		)
-
 		if send_mq_err != nil {
-			fmt.Println(send_mq_err)
+			log.Printf("no se publicó el mensaje : %v", send_mq_err)
+		} else {
+			log.Printf("se publicó el mensaje : %s", messageBody)
 		}
+		time.Sleep(time.Second)
 
 		// notification part
-		serviceClient2 := pb.NewFinalNotificationClient(conn)
-		res2, err2 := serviceClient2.NotifyRegional(context.Background(), &pb.FinalNotifyRequest{
-			NumberOfUsersFailed: int32(1),
-		})
-		if err2 != nil {
-			log.Fatalf("Failed to notify regional server: %v", err2)
-		}
-
-		interesed_users -= (SolicitedKeys - res2.Message)
-		log.Printf("Regional server response: %s", res2.Message)
+		<-serv.usersfailedReceived // wait until the things recieves a message
+		NumberUsersFailed = serv.usersFailed
+		
+		interesed_users -= (SolicitedKeys - NumberUsersFailed)
+		log.Printf("Regional server response: %s", NumberUsersFailed)
 	}
-
-	//aquí la sofi testeo (no sé cómo estaba antes)
-	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-
-		if rabbit_err != nil {
-			fmt.Println(rabbit_err)
-			panic(rabbit_err)
-		}
-
-		ch, rab_con_err := rabbit_conn.Channel()
-		if rab_con_err != nil {
-			fmt.Println(rab_con_err)
-		}
-
-		defer ch.Close()
-		queueName := "TestQueue"
-		msgs_count := 4
-
-		for i := 0; i<msgs_count; i++{
-			messageBody := fmt.Sprintf("Mensaje número %d", i+1)
-			send_mq_err := ch.Publish(
-				"",
-				queueName,
-				false,
-				false,
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte(messageBody),
-				},
-			)
-			
-			if send_mq_err != nil {
-				log.Printf("no se publicó el mensaje %d: %v", i+1, send_mq_err)
-			} else {
-				log.Printf("se publicó el mensaje %d: %s", i+1, messageBody)
-			}
-			time.Sleep(time.Second)
-		}
 }
-
