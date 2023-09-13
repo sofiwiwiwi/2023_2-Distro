@@ -64,7 +64,7 @@ func start_grpc_server() {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	var interesed_users int64
+	var interesed_users =0 int64
 
 	var f, ar_err = os.Open("clients/parametros_de_inicio.txt")
 	if ar_err != nil {
@@ -80,6 +80,23 @@ func main() {
 		}
 		interesed_users += val
 	}
+
+
+	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+
+	if rabbit_err != nil {
+		fmt.Println(rabbit_err)
+		panic(rabbit_err)
+	}
+
+	ch, rab_con_err := rabbit_conn.Channel()
+	if rab_con_err != nil {
+		fmt.Println(rab_con_err)
+	}
+
+	defer ch.Close()
+	queueName := "TestQueue"
+
 	for interesed_users > 0 && keep_iterating {
 
 		start_grpc_server() // Wait for keys received
@@ -88,50 +105,24 @@ func main() {
 		upper_int := int64(float64(interesed_users)/2 + twtpercent)
 		SolicitedKeys := rand.Int63n(upper_int-lower_int) + lower_int
 		fmt.Println("Solicited Keys: ", SolicitedKeys)
+		messageBody := fmt.Sprintf("ameica,%d", SolicitedKeys)
+		send_mq_err := ch.Publish(
+			"",
+			queueName,
+			false,
+			false,
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte(messageBody),
+			},
+		)
+
+		if send_mq_err != nil {
+			log.Printf("no se publicó el mensaje %d: %v", i+1, send_mq_err)
+		} else {
+			log.Printf("se publicó el mensaje %d: %s", i+1, messageBody)
+		}
 
 		start_grpc_server() // Wait for NotifyContinue
-
-		//rabbitmq queue
-		// Connect with Rabbit Queue
-		// rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-
-		// if rabbit_err != nil {
-		// 	fmt.Println(rabbit_err)
-		// 	panic(rabbit_err)
-		// }
-
-		// ch, rab_con_err := rabbit_conn.Channel()
-		// if rab_con_err != nil {
-		// 	fmt.Println(rab_con_err)
-		// }
-
-		// defer ch.Close()
-
-		// msgs, send_mq_err := ch.Publish(
-		// 	"TestQueue",
-		// 	"america",     //chantar nombre de sevidor regional
-		// 	SolicitedKeys, //numero de keys a solicitar
-		// 	true,
-		// 	false,
-		// 	false,
-		// 	false,
-		// 	nil,
-		// )
-
-		// if send_mq_err != nil {
-		// 	fmt.Println(send_mq_err)
-		// }
-
-		// // notification part
-		// serviceClient2 := pb.NewFinalNotificationClient(conn)
-		// res2, err2 := serviceClient2.NotifyRegional(context.Background(), &pb.FinalNotifyRequest{
-		// 	NumberOfUsersFailed: int32(1),
-		// })
-		// if err2 != nil {
-		// 	log.Fatalf("Failed to notify america server: %v", err2)
-		// }
-
-		// interesed_users -= (SolicitedKeys - res2.Message)
-		// log.Printf("america server response: %s", res2.Message)
 	}
 }
