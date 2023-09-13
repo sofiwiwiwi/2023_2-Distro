@@ -6,14 +6,17 @@ services:
     ports:
       - "5672:5672"  # RabbitMQ port
       - "15672:15672"  # RabbitMQ management UI port
+    container_name: rabbitmq-container
   queue:
     image: sofiwi/queue:latest
+    container_name: queue
     depends_on:
       - rabbitmq
     networks:
       - my-network
   region:
     image: sofiwi/region:latest  # Replace with your actual image name and tag
+    container_name: region
     depends_on:
       - rabbitmq
       - queue
@@ -22,6 +25,7 @@ services:
 
   center:
     image: sofiwi/centere:latest  # Replace with your actual image name and tag
+    container_name: center
     depends_on:
       - rabbitmq
       - queue
