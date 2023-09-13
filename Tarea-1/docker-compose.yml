@@ -8,14 +8,14 @@ services:
       - "15672:15672"  # RabbitMQ management UI port
 
   region:
-    image: sofiwi/region:tag  # Replace with your actual image name and tag
+    image: sofiwi/region:latest  # Replace with your actual image name and tag
     depends_on:
       - rabbitmq
     networks:
       - my-network
 
   center:
-    image: sofiwi/centere:tag  # Replace with your actual image name and tag
+    image: sofiwi/centere:latest  # Replace with your actual image name and tag
     depends_on:
       - rabbitmq
     networks:
