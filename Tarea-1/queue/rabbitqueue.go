@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@dist045.inf.santiago.usm.cl:5672/")
 
 	if err != nil {
 		fmt.Println(err)

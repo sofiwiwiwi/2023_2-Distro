@@ -86,25 +86,25 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 func connect_to_all() {
 	var err error
 	if available[0] {
-		conn_asia, err = grpc.Dial(":50053", grpc.WithInsecure())
+		conn_asia, err = grpc.Dial("dist045.inf.santiago.usm.cl:50053", grpc.WithInsecure())
 		if err != nil {
 			log.Fatal("Can't connect to Asia server: ", err)
 		}
 	}
 	if available[1] {
-		conn_america, err = grpc.Dial(":50054", grpc.WithInsecure())
+		conn_america, err = grpc.Dial("dist046.inf.santiago.usm.cl:50054", grpc.WithInsecure())
 		if err != nil {
 			log.Fatal("Can't connect to America server: ", err)
 		}
 	}
 	if available[2] {
-		conn_europe, err = grpc.Dial(":50052", grpc.WithInsecure())
+		conn_europe, err = grpc.Dial("dist047.inf.santiago.usm.cl:50052", grpc.WithInsecure())
 		if err != nil {
 			log.Fatal("Can't connect to Europa server: ", err)
 		}
 	}
 	if available[3] {
-		conn_oceania, err = grpc.Dial(":50051", grpc.WithInsecure())
+		conn_oceania, err = grpc.Dial("dist048.inf.santiago.usm.cl:50051", grpc.WithInsecure())
 		if err != nil {
 			log.Fatal("Can't connect to Oceania server: ", err)
 		}
@@ -213,7 +213,10 @@ func main() {
 	}
 
 	// Connect with Rabbit Queue
-	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	rabbitMQServer := os.Getenv("RABBITMQ_SERVER")
+    rabbitMQPort := os.Getenv("RABBITMQ_PORT")
+	url := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitMQServer, rabbitMQPort)
+	rabbit_conn, rabbit_err := amqp.Dial(url)
 	if rabbit_err != nil {
 		log.Fatal(rabbit_err)
 	}

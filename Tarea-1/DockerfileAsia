@@ -4,10 +4,9 @@ FROM golang:latest
 WORKDIR /Tarea-1
 
 # Copy the Go source code, go.mod, go.sum, and other necessary files into the container
-COPY center.go .
-COPY go.mod .
-COPY go.sum .
-COPY parametros_de_inicio.txt .
+COPY clients/asia/asia.go .
+
+COPY clients/asia/parametros_de_inicio.txt clients/
 
 # Copy the protofiles directory into the container
 COPY protofiles/ protofiles/
@@ -17,11 +16,12 @@ ENV RABBITMQ_SERVER=dist045.inf.santiago.usm.cl
 ENV RABBITMQ_PORT=5672  
 
 # Run go mod tidy
+RUN go mod init Tarea-1
 RUN go mod tidy
 
 # Build the Go application
-RUN go build -o center
+RUN go build -o asia
 
 
 # Specify the command to run when the container starts
-CMD ["./center"]
+CMD ["./asia"]

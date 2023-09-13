@@ -86,7 +86,10 @@ func main() {
 		interested_users_global = int32(val)
 	}
 
-	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	rabbitMQServer := os.Getenv("RABBITMQ_SERVER")
+    rabbitMQPort := os.Getenv("RABBITMQ_PORT")
+	url := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitMQServer, rabbitMQPort)
+	rabbit_conn, rabbit_err := amqp.Dial(url)
 
 	if rabbit_err != nil {
 		log.Fatal(rabbit_err)
