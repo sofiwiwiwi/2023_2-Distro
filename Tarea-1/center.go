@@ -219,7 +219,7 @@ func main() {
 		// Receive user peticions
 		// receive_from_mq(msgs)
 
-		notify_users_left_to_all()
+		// notify_users_left_to_all()
 
 		// Notify Continue
 		connect_to_all()
