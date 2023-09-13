@@ -13,6 +13,7 @@ import (
 
 	pb "Tarea-1/protofiles"
 
+	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 )
 
@@ -26,8 +27,6 @@ type server struct {
 }
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
-	// Los regionales deberían responder con su nombre solamente
-	fmt.Println("Keys received")
 	go func() {
 		time.Sleep(1 * time.Second)
 		serv.Stop()
@@ -37,7 +36,6 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Em
 
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.ContinueServiceReq, error) {
 	keep_iterating = req.Continue && interested_users_global > 0
-	fmt.Println("Continue?: ", keep_iterating)
 	go func() {
 		time.Sleep(1 * time.Second)
 		serv.Stop()
@@ -47,7 +45,6 @@ func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq)
 
 func (s *server) UsersNotAdmittedNotify(ctx context.Context, req *pb.UsersNotAdmittedReq) (*pb.Empty, error) {
 	users_left = req.Users
-	fmt.Println("usuarios sin key?: ", req.Users)
 	go func() {
 		time.Sleep(1 * time.Second)
 		serv.Stop()
@@ -65,7 +62,6 @@ func start_grpc_server() {
 
 	serv = grpc.NewServer()
 	pb.RegisterNotifyKeysServer(serv, &server{})
-	fmt.Println("Watiting for message")
 
 	if err := serv.Serve(listner); err != nil {
 		log.Fatal("Can't initialize the server: ", err)
@@ -74,8 +70,6 @@ func start_grpc_server() {
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-
-	var interesed_users int32
 
 	var f, ar_err = os.Open("clients/parametros_de_inicio.txt")
 	if ar_err != nil {
@@ -89,57 +83,52 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error al analizar la línea %s: %v", text, err)
 		}
-		interesed_users = int32(val)
+		interested_users_global = int32(val)
 	}
 
-	// rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 
-	// if rabbit_err != nil {
-	// 	fmt.Println(rabbit_err)
-	// 	panic(rabbit_err)
-	// }
+	if rabbit_err != nil {
+		log.Fatal(rabbit_err)
+	}
 
-	// ch, rab_con_err := rabbit_conn.Channel()
-	// if rab_con_err != nil {
-	// 	fmt.Println(rab_con_err)
-	// }
+	ch, rab_con_err := rabbit_conn.Channel()
+	if rab_con_err != nil {
+		log.Fatal(rab_con_err)
+	}
 
-	// defer ch.Close()
-	// queueName := "TestQueue"
+	defer ch.Close()
+	queueName := "TestQueue"
 
-	for interesed_users > 0 && keep_iterating {
+	for interested_users_global > 0 && keep_iterating {
 
 		start_grpc_server() // Wait for keys received
-		twtpercent := float64(interesed_users) / 2 * 0.2
-		lower_int := int64(float64(interesed_users)/2 - twtpercent)
-		upper_int := int64(float64(interesed_users)/2 + twtpercent)
+		twtpercent := float64(interested_users_global) / 2 * 0.2
+		lower_int := int64(float64(interested_users_global)/2 - twtpercent)
+		upper_int := int64(float64(interested_users_global)/2 + twtpercent)
 		SolicitedKeys := rand.Int63n(upper_int-lower_int) + lower_int
-		fmt.Println("Solicited Keys: ", SolicitedKeys)
-		// messageBody := fmt.Sprintf("ameica,%d", SolicitedKeys)
-		// send_mq_err := ch.Publish(
-		// 	"",
-		// 	queueName,
-		// 	false,
-		// 	false,
-		// 	amqp.Publishing{
-		// 		ContentType: "text/plain",
-		// 		Body:        []byte(messageBody),
-		// 	},
-		// )
+		fmt.Println("Hay", SolicitedKeys, "personas interesadas en acceder a la beta")
+		messageBody := fmt.Sprintf("america,%d", SolicitedKeys)
+		send_mq_err := ch.Publish(
+			"",
+			queueName,
+			false,
+			false,
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte(messageBody),
+			},
+		)
 
-		// if sen_mq_err != nil {
-		// 	log.Printf("no se publicó el mensaje: %v", send_mq_err)
-		// } else {
-		// 	log.Printf("se publicó el mensaje: %s", messageBody)
-		// }d
+		if send_mq_err != nil {
+			log.Fatal("no se publicó el mensaje: %v", send_mq_err)
+		}
 
 		start_grpc_server() // Wait for UsersNotAdmittedNotify
 		enrolled_users := (int32(SolicitedKeys) - users_left)
-		interesed_users -= enrolled_users
+		interested_users_global -= enrolled_users
 		fmt.Println("Se inscribieron", enrolled_users, "personas")
-		interested_users_global = interesed_users
 		fmt.Println("Quedan", interested_users_global, "personas en espera de cupo")
-		// log.Printf("Regional server response: %s", NumberUsersFailed)
 
 		start_grpc_server() // Wait for NotifyContinue
 	}

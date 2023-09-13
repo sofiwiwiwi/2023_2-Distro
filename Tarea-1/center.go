@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -14,60 +15,72 @@ import (
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 
-	pb "Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
+	pb "Tarea-1/protofiles"
 )
+
+var keys int32
 
 var register_f, register_err = os.Create("registro_flujo.txt")
 var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn
-var available [4]bool = [4]bool{false, true, false, false}
+var available [4]bool = [4]bool{true, true, true, true}
 var users_left bool = true
-var requested := [4]int32{100, 100, 100, 100}
 
+var assigned [4]int32
+var requested [4]int32
+var servers [4]string = [4]string{"asia", "america", "europa", "oceania"}
+var order []int
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
-    msgCount := 0
-    maxMsgs := 4
-    consume := make(chan bool)
-    regions := []string{"asia", "america", "europa", "oceania"}
+	msgCount := 0
+	maxMsgs := 0
+	for i := 0; i < 4; i++ {
+		if available[i] {
+			maxMsgs += 1
+		}
+	}
+	consume := make(chan bool)
+	regions := []string{"asia", "america", "europa", "oceania"}
+	order = []int{}
 
-    go func() {
-        re := regexp.MustCompile(`(\w+),(\d+)`)
-        for d := range msgs {
-            messageBody := string(d.Body)
-            match := re.FindStringSubmatch(messageBody)
-            if len(match) >= 3 {
-                message := match[1]
-                numberStr := match[2]
-                number, err := strconv.Atoi(numberStr)
-                if err == nil {
-                    fmt.Printf("Received message: %s, Message: %s, Number: %d\n", messageBody, message, number)
-                    for i, region := range regions {
-                        if message == region {
-                            requested[i] = number
-                        }
-                    }
-                    allReceived := true
-                    for _, num := range requested {
-                        if num == 0 {
-                            allReceived = false
-                            break
-                        }
-                    }
-                    if allReceived {
-                        fmt.Println("All regions received:", requested)
-                        close(consume)
-                        break
-                    }
-                }
-            }
-            msgCount++
-            if msgCount >= maxMsgs {
-                fmt.Println("Maximum messages received, exiting...")
-                close(consume)
-                break
-            }
-        }
-    }()
+	re := regexp.MustCompile(`(\w+),(\d+)`)
+	for d := range msgs {
+		messageBody := string(d.Body)
+		match := re.FindStringSubmatch(messageBody)
+
+		if len(match) >= 3 {
+			message := match[1]
+			numberStr := match[2]
+			number, err := strconv.Atoi(numberStr)
+			if err == nil {
+				fmt.Println("Mensaje asincrono de servidor", message, "leido")
+				for i, region := range regions {
+					if message == region {
+						requested[i] = int32(number)
+						order = append(order, i)
+						if keys-requested[i] <= 0 {
+							assigned[i] = keys
+							keys = 0
+						} else {
+							assigned[i] = requested[i]
+							keys = keys - assigned[i]
+						}
+
+						var not_registered int = int(requested[i] - assigned[i])
+						var _, l_err = register_f.WriteString("    " + servers[i] + " - " + strconv.Itoa(int(requested[i])) + " - " +
+							strconv.Itoa(int(assigned[i])) + " - " + strconv.Itoa(not_registered) + "\n")
+						if l_err != nil {
+							log.Fatal(l_err)
+						}
+					}
+				}
+			}
+		}
+		msgCount++
+		if msgCount >= maxMsgs {
+			close(consume)
+			break
+		}
+	}
 }
 
 func connect_to_all() {
@@ -81,27 +94,24 @@ func connect_to_all() {
 	if available[1] {
 		conn_america, err = grpc.Dial(":50054", grpc.WithInsecure())
 		if err != nil {
-			log.Fatal("Can't connect to Asia server: ", err)
+			log.Fatal("Can't connect to America server: ", err)
 		}
 	}
 	if available[2] {
 		conn_europe, err = grpc.Dial(":50052", grpc.WithInsecure())
 		if err != nil {
-			log.Fatal("Can't connect to Asia server: ", err)
+			log.Fatal("Can't connect to Europa server: ", err)
 		}
 	}
 	if available[3] {
 		conn_oceania, err = grpc.Dial(":50051", grpc.WithInsecure())
 		if err != nil {
-			log.Fatal("Can't connect to Asia server: ", err)
+			log.Fatal("Can't connect to Oceania server: ", err)
 		}
 	}
-
-	fmt.Println("Connected to everyone correctly")
 }
 
 func send_keys_to_all(keys int32) {
-	fmt.Println("Enviando llaves a los regionales...")
 	hr, min, _ := time.Now().Clock()
 	var hour_s = fmt.Sprintf("%d : %d", hr, min)
 	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(int(keys)) + "\n")
@@ -116,9 +126,8 @@ func send_keys_to_all(keys int32) {
 		}
 		this_client := pb.NewNotifyKeysClient(conn)
 		_, l_client_err := this_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
-			Keys: keys, // reemplazar con keys
+			Keys: keys,
 		})
-		fmt.Println("Enviado")
 		if l_client_err != nil {
 			log.Fatal("Couldn't send keys to region: ", l_client_err)
 		}
@@ -134,7 +143,7 @@ func notify_continue_to_all() {
 		}
 		this_client := pb.NewNotifyKeysClient(conn)
 		res, l_client_err := this_client.NotifyContinue(context.Background(), &pb.ContinueServiceReq{
-			Continue: users_left, // reemplazar con keys
+			Continue: users_left,
 		})
 		if l_client_err != nil {
 			log.Fatal("Couldn't send confirm to region: ", l_client_err)
@@ -151,7 +160,7 @@ func notify_users_left_to_all(requested []int32, assigned []int32, servers []str
 			continue
 		}
 		this_client := pb.NewNotifyKeysClient(conn)
-		fmt.Println("Se inscribieron ", assigned[index], "cupos de servidor ", servers[index])
+		fmt.Println("Se inscribieron", assigned[index], "cupos de servidor", servers[index])
 		var not_registered int32 = requested[index] - assigned[index]
 		_, l_client_err := this_client.UsersNotAdmittedNotify(context.Background(), &pb.UsersNotAdmittedReq{
 			Users: not_registered,
@@ -186,7 +195,7 @@ func main() {
 	var lower_int, pl_err = strconv.ParseInt(lower, 0, 0)
 	var upper_int, pu_err = strconv.ParseInt(upper, 0, 0)
 
-	// Read Rounds interval
+	// Read Rounds
 	fileScanner.Scan()
 	var rounds = fileScanner.Text()
 	var rounds_int, r_err = strconv.ParseInt(rounds, 0, 0)
@@ -206,25 +215,33 @@ func main() {
 	// Connect with Rabbit Queue
 	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if rabbit_err != nil {
-		fmt.Println(rabbit_err)
-		panic(rabbit_err)
+		log.Fatal(rabbit_err)
 	}
 
 	ch, err := rabbit_conn.Channel()
 	if err != nil {
-		fmt.Println(rabbit_err)
+		log.Fatal(rabbit_err)
 	}
+
+	msgs, err := ch.Consume(
+		"TestQueue",
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
 
 	defer ch.Close()
 
-	var i = rounds_int // debe partir en 1 para el print
-	// var ch chan bool
+	var i = rounds_int
 	for i != 0 && users_left {
 		if !available[0] && !available[1] && !available[2] && !available[3] {
 			break
 		}
-		fmt.Println("Generación ", i-(i-1), "/", rounds_int)
-		var keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
+		fmt.Println("Generación ", rounds_int-(i-1), "/", rounds_int)
+		keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
 
 		// Send keys
 		connect_to_all()
@@ -232,18 +249,9 @@ func main() {
 
 		time.Sleep(5 * time.Second)
 
-		fmt.Println("Ahora a confirmar si seguimos")
-
-		upper_int -= 10
-		lower_int -= 10
-
 		// Receive user peticions
 
 		receive_from_mq(msgs)
-
-		requested := [4]int32{100, 100, 100, 100}
-		assigned := [4]int32{100, 100, 100, 100} // DONT ASSIGN MORE THAN THEY REQUESTED
-		servers := [4]string{"asia", "america", "europa", "oceania"}
 
 		connect_to_all()
 		notify_users_left_to_all(requested[:], assigned[:], servers[:])
