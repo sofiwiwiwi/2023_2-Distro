@@ -28,7 +28,7 @@ type server struct {
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2)
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -37,7 +37,7 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Em
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.ContinueServiceReq, error) {
 	keep_iterating = req.Continue && interested_users_global > 0
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2)
 		serv.Stop()
 	}()
 	return &pb.ContinueServiceReq{Continue: keep_iterating}, nil
@@ -46,7 +46,7 @@ func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq)
 func (s *server) UsersNotAdmittedNotify(ctx context.Context, req *pb.UsersNotAdmittedReq) (*pb.Empty, error) {
 	users_left = req.Users
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2)
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -87,7 +87,7 @@ func main() {
 	}
 
 	rabbitMQServer := os.Getenv("RABBITMQ_SERVER")
-    rabbitMQPort := os.Getenv("RABBITMQ_PORT")
+	rabbitMQPort := os.Getenv("RABBITMQ_PORT")
 	url := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitMQServer, rabbitMQPort)
 	rabbit_conn, rabbit_err := amqp.Dial(url)
 
@@ -109,7 +109,13 @@ func main() {
 		twtpercent := float64(interested_users_global) / 2 * 0.2
 		lower_int := int64(float64(interested_users_global)/2 - twtpercent)
 		upper_int := int64(float64(interested_users_global)/2 + twtpercent)
-		SolicitedKeys := rand.Int63n(upper_int-lower_int) + lower_int
+		var SolicitedKeys int64
+		if upper_int-lower_int <= 1 {
+			SolicitedKeys = upper_int
+		} else {
+			SolicitedKeys = rand.Int63n(upper_int-lower_int) + lower_int
+		}
+
 		fmt.Println("Hay", SolicitedKeys, "personas interesadas en acceder a la beta")
 		messageBody := fmt.Sprintf("asia,%d", SolicitedKeys)
 		send_mq_err := ch.Publish(
@@ -124,7 +130,7 @@ func main() {
 		)
 
 		if send_mq_err != nil {
-			log.Fatal("no se publicó el mensaje: %v", send_mq_err)
+			log.Fatal("no se publicó el mensaje:", send_mq_err)
 		}
 
 		start_grpc_server() // Wait for UsersNotAdmittedNotify

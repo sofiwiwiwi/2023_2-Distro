@@ -112,8 +112,8 @@ func connect_to_all() {
 }
 
 func send_keys_to_all(keys int32) {
-	hr, min, _ := time.Now().Clock()
-	var hour_s = fmt.Sprintf("%d : %d", hr, min)
+	hr, min, ms := time.Now().Clock()
+	var hour_s = fmt.Sprintf("%d : %d : %d", hr, min, ms)
 	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(int(keys)) + "\n")
 	if l_err != nil {
 		log.Fatal(l_err)
@@ -214,7 +214,7 @@ func main() {
 
 	// Connect with Rabbit Queue
 	rabbitMQServer := os.Getenv("RABBITMQ_SERVER")
-    rabbitMQPort := os.Getenv("RABBITMQ_PORT")
+	rabbitMQPort := os.Getenv("RABBITMQ_PORT")
 	url := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitMQServer, rabbitMQPort)
 	rabbit_conn, rabbit_err := amqp.Dial(url)
 	if rabbit_err != nil {
@@ -239,18 +239,19 @@ func main() {
 	defer ch.Close()
 
 	var i = rounds_int
+	var curr_round = 1
 	for i != 0 && users_left {
 		if !available[0] && !available[1] && !available[2] && !available[3] {
 			break
 		}
-		fmt.Println("Generación ", rounds_int-(i-1), "/", rounds_int)
+		fmt.Println("Generación ", curr_round, "/", rounds_int)
 		keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
 
 		// Send keys
 		connect_to_all()
 		send_keys_to_all(keys)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(15)
 
 		// Receive user peticions
 
@@ -258,19 +259,27 @@ func main() {
 
 		connect_to_all()
 		notify_users_left_to_all(requested[:], assigned[:], servers[:])
-		time.Sleep(5 * time.Second)
+		time.Sleep(15)
 
 		// Notify Continue
 		connect_to_all()
-		if i > 1 {
+		if i > 1 || i == -1 {
 			notify_continue_to_all()
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(15)
 
+		curr_round += 1
 		if i > 0 {
 			i -= 1
 		}
 	}
 	users_left = false
 	notify_continue_to_all()
+
+	hr, min, ms := time.Now().Clock()
+	var hour_s = fmt.Sprintf("%d : %d : %d", hr, min, ms)
+	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(int(keys)) + "\n")
+	if l_err != nil {
+		log.Fatal(l_err)
+	}
 }
