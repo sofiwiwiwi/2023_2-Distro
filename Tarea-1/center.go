@@ -129,7 +129,7 @@ func notify_continue_to_all() {
 			Continue: users_left, // reemplazar con keys
 		})
 		if l_client_err != nil {
-			log.Fatal("Couldn't send keys to Asia: ", l_client_err)
+			log.Fatal("Couldn't send confirm to server: ", l_client_err)
 		}
 		conn.Close()
 	}
@@ -210,6 +210,7 @@ func main() {
 	// receive_from_mq(msgs)
 
 	var i = rounds_int // debe partir en 1 para el print
+	// var ch chan bool
 	for i != 0 && users_left {
 		fmt.Println("Generación ", i, "/", rounds_int)
 		var keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
@@ -217,6 +218,17 @@ func main() {
 		// Send keys
 		connect_to_all()
 		send_keys_to_all(keys)
+
+		// ch = make(chan bool)
+		// go func() {
+		// 	time.Sleep(10 * time.)
+		// 	ch <- true
+		// }()
+
+		// <-ch
+		time.Sleep(5 * time.Second)
+
+		fmt.Println("Ahora a confirmar si seguimos")
 
 		upper_int -= 10
 		lower_int -= 10
@@ -228,10 +240,21 @@ func main() {
 
 		// Notify Continue
 		connect_to_all()
-		notify_continue_to_all()
+		if i > 1 {
+			notify_continue_to_all()
+		}
+		time.Sleep(5 * time.Second)
+		// ch = make(chan bool)
+		// go func() {
+		// 	time.Sleep(10)
+		// 	<-ch
+		// }()
+		// <-ch
 
 		if i > 0 {
 			i -= 1
 		}
 	}
+	users_left = false
+	notify_continue_to_all()
 }
