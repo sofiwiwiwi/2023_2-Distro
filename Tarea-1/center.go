@@ -21,24 +21,53 @@ var register_f, register_err = os.Create("registro_flujo.txt")
 var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn
 var available [4]bool = [4]bool{false, true, false, false}
 var users_left bool = true
+var requested := [4]int32{100, 100, 100, 100}
+
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
-	msg_count := 0
-	max_msgs := 4
+    msgCount := 0
+    maxMsgs := 4
+    consume := make(chan bool)
+    regions := []string{"asia", "america", "europa", "oceania"}
 
-	consume := make(chan bool)
-
-	func() { // ver si podemos quitar el chan
-		for d := range msgs {
-			fmt.Printf("Mensaje asíncrono: de servidor %s leído\n", d.Body)
-			msg_count++
-
-			if msg_count >= max_msgs {
-				close(consume)
-				break
-			}
-		}
-	}()
+    go func() {
+        re := regexp.MustCompile(`(\w+),(\d+)`)
+        for d := range msgs {
+            messageBody := string(d.Body)
+            match := re.FindStringSubmatch(messageBody)
+            if len(match) >= 3 {
+                message := match[1]
+                numberStr := match[2]
+                number, err := strconv.Atoi(numberStr)
+                if err == nil {
+                    fmt.Printf("Received message: %s, Message: %s, Number: %d\n", messageBody, message, number)
+                    for i, region := range regions {
+                        if message == region {
+                            requested[i] = number
+                        }
+                    }
+                    allReceived := true
+                    for _, num := range requested {
+                        if num == 0 {
+                            allReceived = false
+                            break
+                        }
+                    }
+                    if allReceived {
+                        fmt.Println("All regions received:", requested)
+                        close(consume)
+                        break
+                    }
+                }
+            }
+            msgCount++
+            if msgCount >= maxMsgs {
+                fmt.Println("Maximum messages received, exiting...")
+                close(consume)
+                break
+            }
+        }
+    }()
 }
 
 func connect_to_all() {
@@ -175,29 +204,18 @@ func main() {
 	}
 
 	// Connect with Rabbit Queue
-	// rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	// if rabbit_err != nil {
-	// 	fmt.Println(rabbit_err)
-	// 	panic(rabbit_err)
-	// }
+	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if rabbit_err != nil {
+		fmt.Println(rabbit_err)
+		panic(rabbit_err)
+	}
 
-	// ch, err := rabbit_conn.Channel()
-	// if err != nil {
-	// 	fmt.Println(rabbit_err)
-	// }
+	ch, err := rabbit_conn.Channel()
+	if err != nil {
+		fmt.Println(rabbit_err)
+	}
 
-	// defer ch.Close()
-
-	// msgs, err := ch.Consume(
-	// 	"TestQueue",
-	// 	"",
-	// 	true,
-	// 	false,
-	// 	false,
-	// 	false,
-	// 	nil,
-	// )
-	// receive_from_mq(msgs)
+	defer ch.Close()
 
 	var i = rounds_int // debe partir en 1 para el print
 	// var ch chan bool
@@ -220,7 +238,8 @@ func main() {
 		lower_int -= 10
 
 		// Receive user peticions
-		// receive_from_mq(msgs)
+
+		receive_from_mq(msgs)
 
 		requested := [4]int32{100, 100, 100, 100}
 		assigned := [4]int32{100, 100, 100, 100} // DONT ASSIGN MORE THAN THEY REQUESTED
