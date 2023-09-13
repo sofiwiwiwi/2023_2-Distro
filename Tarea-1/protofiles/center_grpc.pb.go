@@ -19,7 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NotifyKeysClient interface {
 	SendKeys(ctx context.Context, in *AvailableKeysReq, opts ...grpc.CallOption) (*Empty, error)
-	NotifyContinue(ctx context.Context, in *ContinueServiceReq, opts ...grpc.CallOption) (*Empty, error)
+	NotifyContinue(ctx context.Context, in *ContinueServiceReq, opts ...grpc.CallOption) (*ContinueServiceReq, error)
+	UsersNotAdmittedNotify(ctx context.Context, in *UsersNotAdmittedReq, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type notifyKeysClient struct {
@@ -39,9 +40,18 @@ func (c *notifyKeysClient) SendKeys(ctx context.Context, in *AvailableKeysReq, o
 	return out, nil
 }
 
-func (c *notifyKeysClient) NotifyContinue(ctx context.Context, in *ContinueServiceReq, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *notifyKeysClient) NotifyContinue(ctx context.Context, in *ContinueServiceReq, opts ...grpc.CallOption) (*ContinueServiceReq, error) {
+	out := new(ContinueServiceReq)
 	err := c.cc.Invoke(ctx, "/protofiles.NotifyKeys/NotifyContinue", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notifyKeysClient) UsersNotAdmittedNotify(ctx context.Context, in *UsersNotAdmittedReq, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/protofiles.NotifyKeys/UsersNotAdmittedNotify", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +63,8 @@ func (c *notifyKeysClient) NotifyContinue(ctx context.Context, in *ContinueServi
 // for forward compatibility
 type NotifyKeysServer interface {
 	SendKeys(context.Context, *AvailableKeysReq) (*Empty, error)
-	NotifyContinue(context.Context, *ContinueServiceReq) (*Empty, error)
+	NotifyContinue(context.Context, *ContinueServiceReq) (*ContinueServiceReq, error)
+	UsersNotAdmittedNotify(context.Context, *UsersNotAdmittedReq) (*Empty, error)
 	mustEmbedUnimplementedNotifyKeysServer()
 }
 
@@ -64,8 +75,11 @@ type UnimplementedNotifyKeysServer struct {
 func (UnimplementedNotifyKeysServer) SendKeys(context.Context, *AvailableKeysReq) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendKeys not implemented")
 }
-func (UnimplementedNotifyKeysServer) NotifyContinue(context.Context, *ContinueServiceReq) (*Empty, error) {
+func (UnimplementedNotifyKeysServer) NotifyContinue(context.Context, *ContinueServiceReq) (*ContinueServiceReq, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyContinue not implemented")
+}
+func (UnimplementedNotifyKeysServer) UsersNotAdmittedNotify(context.Context, *UsersNotAdmittedReq) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UsersNotAdmittedNotify not implemented")
 }
 func (UnimplementedNotifyKeysServer) mustEmbedUnimplementedNotifyKeysServer() {}
 
@@ -116,6 +130,24 @@ func _NotifyKeys_NotifyContinue_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotifyKeys_UsersNotAdmittedNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UsersNotAdmittedReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotifyKeysServer).UsersNotAdmittedNotify(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protofiles.NotifyKeys/UsersNotAdmittedNotify",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotifyKeysServer).UsersNotAdmittedNotify(ctx, req.(*UsersNotAdmittedReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NotifyKeys_ServiceDesc is the grpc.ServiceDesc for NotifyKeys service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +162,10 @@ var NotifyKeys_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NotifyContinue",
 			Handler:    _NotifyKeys_NotifyContinue_Handler,
+		},
+		{
+			MethodName: "UsersNotAdmittedNotify",
+			Handler:    _NotifyKeys_UsersNotAdmittedNotify_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

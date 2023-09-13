@@ -18,6 +18,7 @@ import (
 
 var serv *grpc.Server
 var keep_iterating bool = true
+var users_left int32
 
 type server struct {
 	pb.UnimplementedNotifyKeysServer
@@ -33,14 +34,14 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Em
 	return &pb.Empty{}, nil
 }
 
-func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.Empty, error) {
-	keep_iterating = req.Continue
+func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.ContinueServiceReq, error) {
+	keep_iterating = req.Continue && users_left != 0
 	fmt.Println("Continue?: ", keep_iterating)
 	go func() {
 		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
-	return &pb.Empty{}, nil
+	return &pb.ContinueServiceReq{Continue: keep_iterating}, nil
 }
 
 func start_grpc_server() {
