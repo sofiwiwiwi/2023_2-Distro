@@ -14,8 +14,12 @@ import (
 	"github.com/streadway/amqp"
 	"google.golang.org/grpc"
 
-	pb "github.com/sofiwiwiwi/2023_1-Distro/tree/bup-develop/Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
+	pb "Tarea-1/protofiles" // HAY QUE CAMBIAR ESTO AL MAIN CUANDO TODO ESTÉ LISTO
 )
+
+var register_f, register_err = os.Create("registro_flujo.txt")
+var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn
+var users_left bool = true
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
 	msg_count := 0
@@ -36,12 +40,32 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 	}()
 }
 
-func send_keys_to_all(keys int, conn_asia *grpc.ClientConn, conn_europe *grpc.ClientConn,
-	conn_oceania *grpc.ClientConn, conn_america *grpc.ClientConn) {
+func connect_to_all() {
+	var err error
+	conn_asia, err = grpc.Dial(":50053", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Can't connect to Asia server: ", err)
+	}
+	conn_europe, err = grpc.Dial(":50052", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Can't connect to Asia server: ", err)
+	}
+	conn_oceania, err = grpc.Dial(":50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Can't connect to Asia server: ", err)
+	}
+	conn_america, err = grpc.Dial(":50054", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Can't connect to Asia server: ", err)
+	}
+	fmt.Println("Connected to everyone correctly")
+}
 
+func send_keys_to_all(keys int32) {
+	fmt.Println("Enviando llaves a los regionales...")
 	hr, min, _ := time.Now().Clock()
 	var hour_s = fmt.Sprintf("%d : %d", hr, min)
-	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(keys) + "\n")
+	var _, l_err = register_f.WriteString(hour_s + " - " + strconv.Itoa(int(keys)) + "\n")
 	if l_err != nil {
 		log.Fatal(l_err)
 	}
@@ -50,11 +74,11 @@ func send_keys_to_all(keys int, conn_asia *grpc.ClientConn, conn_europe *grpc.Cl
 	for _, conn := range clients {
 		this_client := pb.NewNotifyKeysClient(conn)
 		_, l_client_err := this_client.SendKeys(context.Background(), &pb.AvailableKeysReq{
-			Id:  1,
-			Qty: 5, // reemplazar con keys
+			Keys: keys, // reemplazar con keys
 		})
+		fmt.Println("Enviado")
 		if l_client_err != nil {
-			log.Fatal("Couldn't send keys to Asia: ", l_client_err)
+			log.Fatal("Couldn't send keys to Server: ", l_client_err)
 		}
 	}
 
@@ -96,30 +120,29 @@ func send_keys_to_all(keys int, conn_asia *grpc.ClientConn, conn_europe *grpc.Cl
 	// }
 }
 
-type server struct { // NO VA A IR
-	pb.UnimplementedNotifyKeysServer
-	pb.UnimplementedFinalNotificationServer
-}
+func notify_continue_to_all() {
+	var clients = [4]*grpc.ClientConn{conn_asia, conn_europe, conn_oceania, conn_america}
 
-func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.AvailableKeysReq, error) { // NO VA A IR
-	// Los regionales deberían responder con su nombre solamente
-	fmt.Println("Message received")
-	return &pb.AvailableKeysReq{
-		Id:  0,
-		Qty: 150,
-	}, nil
-}
-
-func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) { // NO VA A IR
-	numberOfUsersFailed := 0 //aca va el numero de usuarios que no pudieron entrar, aun no se como calcularlo
-	response := &pb.FinalNotifyResponse{
-		Message: fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed),
+	for _, conn := range clients {
+		this_client := pb.NewNotifyKeysClient(conn)
+		_, l_client_err := this_client.NotifyContinue(context.Background(), &pb.ContinueServiceReq{
+			Continue: users_left, // reemplazar con keys
+		})
+		if l_client_err != nil {
+			log.Fatal("Couldn't send keys to Asia: ", l_client_err)
+		}
+		conn.Close()
 	}
-
-	return response, nil
 }
 
-var register_f, register_err = os.Create("registro_flujo.txt")
+// func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) { // NO VA A IR
+// 	numberOfUsersFailed := 0 //aca va el numero de usuarios que no pudieron entrar, aun no se como calcularlo
+// 	response := &pb.FinalNotifyResponse{
+// 		Message: fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed),
+// 	}
+
+// 	return response, nil
+// }
 
 func main() {
 	if register_err != nil {
@@ -162,69 +185,50 @@ func main() {
 	}
 
 	// Connect with Rabbit Queue
-	rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if rabbit_err != nil {
-		fmt.Println(rabbit_err)
-		panic(rabbit_err)
-	}
-
-	ch, err := rabbit_conn.Channel()
-	if err != nil {
-		fmt.Println(rabbit_err)
-	}
-
-	defer ch.Close()
-
-	msgs, err := ch.Consume(
-		"TestQueue",
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	receive_from_mq(msgs)
-
-	// Establish grpc connection.
-	// listner, s_err := net.Listen("tcp", ":50051")
-
-	// if s_err != nil {
-	// 	log.Fatal("Cant create tcp connection")
+	// rabbit_conn, rabbit_err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	// if rabbit_err != nil {
+	// 	fmt.Println(rabbit_err)
+	// 	panic(rabbit_err)
 	// }
 
-	// serv := grpc.NewServer()
-	// pb.RegisterNotifyKeysServer(serv, &server{})
-	// pb.RegisterFinalNotificationServer(serv, &server{})
+	// ch, err := rabbit_conn.Channel()
+	// if err != nil {
+	// 	fmt.Println(rabbit_err)
+	// }
 
-	conn_asia, con_asia_err := grpc.Dial(":50051", grpc.WithInsecure())
-	if con_asia_err != nil {
-		log.Fatal("Can't connect to Asia server: ", con_asia_err)
-	}
-	conn_europe, con_europe_err := grpc.Dial(":50051", grpc.WithInsecure())
-	if con_europe_err != nil {
-		log.Fatal("Can't connect to Asia server: ", con_europe_err)
-	}
-	conn_oceania, con_oceania_err := grpc.Dial(":50051", grpc.WithInsecure())
-	if con_oceania_err != nil {
-		log.Fatal("Can't connect to Asia server: ", con_oceania_err)
-	}
-	conn_america, con_america_err := grpc.Dial(":50051", grpc.WithInsecure())
-	if con_america_err != nil {
-		log.Fatal("Can't connect to Asia server: ", con_asia_err)
-	}
+	// defer ch.Close()
 
-	var i = rounds_int
-	for i != 0 {
+	// msgs, err := ch.Consume(
+	// 	"TestQueue",
+	// 	"",
+	// 	true,
+	// 	false,
+	// 	false,
+	// 	false,
+	// 	nil,
+	// )
+	// receive_from_mq(msgs)
+
+	var i = rounds_int // debe partir en 1 para el print
+	for i != 0 && users_left {
 		fmt.Println("Generación ", i, "/", rounds_int)
-		var keys = int(rand.Int63n(upper_int-lower_int) + lower_int)
+		var keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
 
-		send_keys_to_all(keys, conn_asia, conn_europe, conn_oceania, conn_america)
+		// Send keys
+		connect_to_all()
+		send_keys_to_all(keys)
 
 		upper_int -= 10
 		lower_int -= 10
 
-		receive_from_mq(msgs)
+		// Receive user peticions
+		// receive_from_mq(msgs)
+
+		// Notify how many didn't get in
+
+		// Notify Continue
+		connect_to_all()
+		notify_continue_to_all()
 
 		if i > 0 {
 			i -= 1
