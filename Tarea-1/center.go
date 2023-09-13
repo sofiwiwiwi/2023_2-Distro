@@ -19,7 +19,7 @@ import (
 
 var register_f, register_err = os.Create("registro_flujo.txt")
 var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn
-var available [4]bool = [4]bool{true, true, true, true}
+var available [4]bool = [4]bool{false, true, false, false}
 var users_left bool = true
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
@@ -43,22 +43,31 @@ func receive_from_mq(msgs <-chan amqp.Delivery) {
 
 func connect_to_all() {
 	var err error
-	conn_asia, err = grpc.Dial(":50053", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal("Can't connect to Asia server: ", err)
+	if available[0] {
+		conn_asia, err = grpc.Dial(":50053", grpc.WithInsecure())
+		if err != nil {
+			log.Fatal("Can't connect to Asia server: ", err)
+		}
 	}
-	conn_europe, err = grpc.Dial(":50052", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal("Can't connect to Asia server: ", err)
+	if available[1] {
+		conn_america, err = grpc.Dial(":50054", grpc.WithInsecure())
+		if err != nil {
+			log.Fatal("Can't connect to Asia server: ", err)
+		}
 	}
-	conn_oceania, err = grpc.Dial(":50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal("Can't connect to Asia server: ", err)
+	if available[2] {
+		conn_europe, err = grpc.Dial(":50052", grpc.WithInsecure())
+		if err != nil {
+			log.Fatal("Can't connect to Asia server: ", err)
+		}
 	}
-	conn_america, err = grpc.Dial(":50054", grpc.WithInsecure())
-	if err != nil {
-		log.Fatal("Can't connect to Asia server: ", err)
+	if available[3] {
+		conn_oceania, err = grpc.Dial(":50051", grpc.WithInsecure())
+		if err != nil {
+			log.Fatal("Can't connect to Asia server: ", err)
+		}
 	}
+
 	fmt.Println("Connected to everyone correctly")
 }
 
@@ -70,7 +79,7 @@ func send_keys_to_all(keys int32) {
 	if l_err != nil {
 		log.Fatal(l_err)
 	}
-	var clients = [4]*grpc.ClientConn{conn_asia, conn_europe, conn_oceania, conn_america}
+	var clients = [4]*grpc.ClientConn{conn_asia, conn_america, conn_europe, conn_oceania}
 
 	for index, conn := range clients {
 		if !available[index] {
@@ -88,7 +97,7 @@ func send_keys_to_all(keys int32) {
 }
 
 func notify_continue_to_all() {
-	var clients = [4]*grpc.ClientConn{conn_asia, conn_europe, conn_oceania, conn_america}
+	var clients = [4]*grpc.ClientConn{conn_asia, conn_america, conn_europe, conn_oceania}
 
 	for index, conn := range clients {
 		if !available[index] {
@@ -107,7 +116,7 @@ func notify_continue_to_all() {
 }
 
 func notify_users_left_to_all(requested []int32, assigned []int32, servers []string) {
-	var clients = [4]*grpc.ClientConn{conn_asia, conn_europe, conn_oceania, conn_america}
+	var clients = [4]*grpc.ClientConn{conn_asia, conn_america, conn_europe, conn_oceania}
 	for index, conn := range clients {
 		if !available[index] {
 			continue
@@ -124,15 +133,6 @@ func notify_users_left_to_all(requested []int32, assigned []int32, servers []str
 		conn.Close()
 	}
 }
-
-// func (s *server) NotifyRegional(ctx context.Context, req *pb.FinalNotifyRequest) (*pb.FinalNotifyResponse, error) { // NO VA A IR
-// 	numberOfUsersFailed := 0 //aca va el numero de usuarios que no pudieron entrar, aun no se como calcularlo
-// 	response := &pb.FinalNotifyResponse{
-// 		Message: fmt.Sprintf("%d Usuarios no pudieron acceder a la beta.", numberOfUsersFailed),
-// 	}
-
-// 	return response, nil
-// }
 
 func main() {
 	if register_err != nil {
@@ -202,7 +202,10 @@ func main() {
 	var i = rounds_int // debe partir en 1 para el print
 	// var ch chan bool
 	for i != 0 && users_left {
-		fmt.Println("Generación ", i, "/", rounds_int-(rounds_int-1))
+		if !available[0] && !available[1] && !available[2] && !available[3] {
+			break
+		}
+		fmt.Println("Generación ", i-(i-1), "/", rounds_int)
 		var keys = int32(rand.Int63n(upper_int-lower_int) + lower_int)
 
 		// Send keys
@@ -219,7 +222,13 @@ func main() {
 		// Receive user peticions
 		// receive_from_mq(msgs)
 
-		// notify_users_left_to_all()
+		requested := [4]int32{100, 100, 100, 100}
+		assigned := [4]int32{100, 100, 100, 100} // DONT ASSIGN MORE THAN THEY REQUESTED
+		servers := [4]string{"asia", "america", "europa", "oceania"}
+
+		connect_to_all()
+		notify_users_left_to_all(requested[:], assigned[:], servers[:])
+		time.Sleep(5 * time.Second)
 
 		// Notify Continue
 		connect_to_all()
