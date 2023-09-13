@@ -21,14 +21,14 @@ import (
 var keys int32
 
 var register_f, register_err = os.Create("registro_flujo.txt")
-var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn
-var available [4]bool = [4]bool{true, true, true, true}
-var users_left bool = true
+var conn_asia, conn_america, conn_europe, conn_oceania *grpc.ClientConn // All connections
+var available [4]bool = [4]bool{true, true, true, true}                 // Regions with users left
+var users_left bool = true                                              // For main loop
 
-var assigned [4]int32
-var requested [4]int32
+var assigned [4]int32  // Users assigned with beta keys for each region
+var requested [4]int32 // Users that requested keys for each region
 var servers [4]string = [4]string{"asia", "america", "europa", "oceania"}
-var order []int
+var order []int // Used to print data in order
 
 func receive_from_mq(msgs <-chan amqp.Delivery) {
 	msgCount := 0
@@ -155,10 +155,11 @@ func notify_continue_to_all() {
 
 func notify_users_left_to_all(requested []int32, assigned []int32, servers []string) {
 	var clients = [4]*grpc.ClientConn{conn_asia, conn_america, conn_europe, conn_oceania}
-	for index, conn := range clients {
+	for _, index := range order {
 		if !available[index] {
 			continue
 		}
+		conn := clients[index]
 		this_client := pb.NewNotifyKeysClient(conn)
 		fmt.Println("Se inscribieron", assigned[index], "cupos de servidor", servers[index])
 		var not_registered int32 = requested[index] - assigned[index]
@@ -238,10 +239,10 @@ func main() {
 
 	defer ch.Close()
 
-	var i = rounds_int
+	var i = rounds_int // Going backwards
 	var curr_round = 1
 	for i != 0 && users_left {
-		if !available[0] && !available[1] && !available[2] && !available[3] {
+		if !available[0] && !available[1] && !available[2] && !available[3] { // if there's no users left, break
 			break
 		}
 		fmt.Println("Generación ", curr_round, "/", rounds_int)
@@ -251,7 +252,7 @@ func main() {
 		connect_to_all()
 		send_keys_to_all(keys)
 
-		time.Sleep(15)
+		time.Sleep(2 * time.Second) // wait to coordinate
 
 		// Receive user peticions
 
@@ -259,14 +260,14 @@ func main() {
 
 		connect_to_all()
 		notify_users_left_to_all(requested[:], assigned[:], servers[:])
-		time.Sleep(15)
+		time.Sleep(2 * time.Second)
 
 		// Notify Continue
 		connect_to_all()
 		if i > 1 || i == -1 {
 			notify_continue_to_all()
 		}
-		time.Sleep(15)
+		time.Sleep(2 * time.Second)
 
 		curr_round += 1
 		if i > 0 {

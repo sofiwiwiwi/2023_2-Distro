@@ -1,66 +1,39 @@
-15 : 27 : 14 - 455
-    europa - 143 - 143 - 0
-    america - 129 - 129 - 0
-    asia - 125 - 125 - 0
-    oceania - 143 - 58 - 85
-15 : 27 : 29 - 220
-    europa - 89 - 89 - 0
-    oceania - 111 - 111 - 0
-    america - 72 - 20 - 52
-    asia - 81 - 0 - 81
-15 : 27 : 44 - 404
-    europa - 33 - 33 - 0
-    america - 79 - 79 - 0
-    asia - 97 - 97 - 0
-    oceania - 58 - 58 - 0
-15 : 27 : 59 - 368
-    europa - 17 - 17 - 0
-    oceania - 40 - 40 - 0
+18 : 42 : 3 - 348
+    asia - 132 - 132 - 0
+    oceania - 126 - 126 - 0
+    america - 171 - 90 - 81
+    europa - 129 - 0 - 129
+18 : 42 : 9 - 469
+    asia - 89 - 89 - 0
+    oceania - 96 - 96 - 0
+    europa - 153 - 153 - 0
+    america - 111 - 111 - 0
+18 : 42 : 15 - 493
+    europa - 79 - 79 - 0
     asia - 41 - 41 - 0
-    america - 34 - 34 - 0
-15 : 28 : 14 - 495
-    oceania - 13 - 13 - 0
-    europa - 8 - 8 - 0
-    america - 19 - 19 - 0
-    asia - 15 - 15 - 0
-15 : 28 : 29 - 269
-    oceania - 9 - 9 - 0
-    asia - 8 - 8 - 0
-    europa - 5 - 5 - 0
+    oceania - 40 - 40 - 0
+    america - 55 - 55 - 0
+18 : 42 : 21 - 290
+    europa - 36 - 36 - 0
+    asia - 17 - 17 - 0
+    oceania - 18 - 18 - 0
+    america - 25 - 25 - 0
+18 : 42 : 27 - 203
     america - 10 - 10 - 0
-15 : 28 : 44 - 476
-    asia - 6 - 6 - 0
-    oceania - 5 - 5 - 0
-    europa - 2 - 2 - 0
+    europa - 17 - 17 - 0
+    asia - 11 - 11 - 0
+    oceania - 9 - 9 - 0
+18 : 42 : 33 - 476
+    oceania - 4 - 4 - 0
     america - 4 - 4 - 0
-15 : 28 : 59 - 393
-    europa - 1 - 1 - 0
-    oceania - 2 - 2 - 0
-    america - 2 - 2 - 0
-    asia - 3 - 3 - 0
-15 : 29 : 14 - 352
-    asia - 2 - 2 - 0
-    america - 1 - 1 - 0
-    oceania - 1 - 1 - 0
-    europa - 0 - 0 - 0
-15 : 29 : 29 - 265
-    asia - 1 - 1 - 0
-    america - 0 - 0 - 0
-    oceania - 1 - 1 - 0
-    europa - 0 - 0 - 0
-15 : 29 : 44 - 484
-    asia - 0 - 0 - 0
-    oceania - 0 - 0 - 0
-    europa - 0 - 0 - 0
-    america - 0 - 0 - 0
-15 : 29 : 59 - 258
-    america - 0 - 0 - 0
-    europa - 0 - 0 - 0
-    asia - 0 - 0 - 0
-    oceania - 0 - 0 - 0
-15 : 30 : 14 - 407
-    america - 0 - 0 - 0
-    europa - 0 - 0 - 0
-    asia - 0 - 0 - 0
-    oceania - 0 - 0 - 0
-15 : 30 : 29 - 404
+    asia - 4 - 4 - 0
+    europa - 8 - 8 - 0
+18 : 42 : 39 - 440
+    america - 5 - 5 - 0
+    oceania - 3 - 3 - 0
+    europa - 2 - 2 - 0
+    asia - 6 - 6 - 0
+18 : 42 : 45 - 258
+    oceania - 4 - 4 - 0
+    europa - 5 - 5 - 0
+18 : 42 : 51 - 249

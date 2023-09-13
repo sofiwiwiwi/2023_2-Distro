@@ -28,7 +28,7 @@ type server struct {
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -37,7 +37,7 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Em
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.ContinueServiceReq, error) {
 	keep_iterating = req.Continue && interested_users_global > 0
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
 	return &pb.ContinueServiceReq{Continue: keep_iterating}, nil
@@ -46,7 +46,7 @@ func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq)
 func (s *server) UsersNotAdmittedNotify(ctx context.Context, req *pb.UsersNotAdmittedReq) (*pb.Empty, error) {
 	users_left = req.Users
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -111,7 +111,7 @@ func main() {
 		upper_int := int64(float64(interested_users_global)/2 + twtpercent)
 		var SolicitedKeys int64
 		if upper_int-lower_int <= 1 {
-			SolicitedKeys = upper_int
+			SolicitedKeys = int64(interested_users_global)
 		} else {
 			SolicitedKeys = rand.Int63n(upper_int-lower_int) + lower_int
 		}

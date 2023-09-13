@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// All comments for all regions are here, since they are all basically the same.
+
 var serv *grpc.Server
 var keep_iterating bool = true
 var users_left int32
@@ -28,7 +30,7 @@ type server struct {
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second) // Wait a bit before closing connection
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -37,7 +39,7 @@ func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Em
 func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq) (*pb.ContinueServiceReq, error) {
 	keep_iterating = req.Continue && interested_users_global > 0
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
 	return &pb.ContinueServiceReq{Continue: keep_iterating}, nil
@@ -46,7 +48,7 @@ func (s *server) NotifyContinue(ctx context.Context, req *pb.ContinueServiceReq)
 func (s *server) UsersNotAdmittedNotify(ctx context.Context, req *pb.UsersNotAdmittedReq) (*pb.Empty, error) {
 	users_left = req.Users
 	go func() {
-		time.Sleep(2)
+		time.Sleep(1 * time.Second)
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -110,8 +112,8 @@ func main() {
 		lower_int := int64(float64(interested_users_global)/2 - twtpercent)
 		upper_int := int64(float64(interested_users_global)/2 + twtpercent)
 		var SolicitedKeys int64
-		if upper_int-lower_int <= 1 {
-			SolicitedKeys = upper_int
+		if upper_int-lower_int <= 1 { // If value is too low the rand will crash the program
+			SolicitedKeys = int64(interested_users_global)
 		} else {
 			SolicitedKeys = rand.Int63n(upper_int-lower_int) + lower_int
 		}
