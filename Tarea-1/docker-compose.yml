@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"  # RabbitMQ port
+      - "15672:15672"  # RabbitMQ management UI port
+
+  region:
+    image: sofiwi/region:tag  # Replace with your actual image name and tag
+    depends_on:
+      - rabbitmq
+    networks:
+      - my-network
+
+  center:
+    image: sofiwi/centere:tag  # Replace with your actual image name and tag
+    depends_on:
+      - rabbitmq
+    networks:
+      - my-network
+
+networks:
+  my-network:
