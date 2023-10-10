@@ -11,9 +11,9 @@ import (
 
 func main() {
 	//conexion a OMS
-	conn_OMS, err := grpc.Dial("dist045.inf.santiago.usm.cl:50053", grpc.WithInsecure())
+	conn_OMS, err := grpc.Dial(":50051", grpc.WithInsecure())
 	if err != nil {
-		log.Fatal("Can't connect to Asia server: ", err)
+		log.Fatal("Can't connect to OMS server: ", err)
 	}
 
 	this_client := pb.NewOMSClient(conn_OMS)
@@ -22,6 +22,7 @@ func main() {
 		EsInfectado: true,
 	})
 	if l_client_err != nil {
-		log.Fatal("Couldn't send keys to region: ", l_client_err)
+		log.Fatal("Couldn't send message", l_client_err)
 	}
+	log.Println("Enviado uwu")
 }
