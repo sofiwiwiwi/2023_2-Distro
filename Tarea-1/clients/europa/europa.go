@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// All comments for all regions are here, since they are all basically the same.
+
 var serv *grpc.Server
 var keep_iterating bool = true
 var users_left int32
@@ -28,7 +30,7 @@ type server struct {
 
 func (s *server) SendKeys(ctx context.Context, req *pb.AvailableKeysReq) (*pb.Empty, error) {
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Second) // Wait a bit before closing connection
 		serv.Stop()
 	}()
 	return &pb.Empty{}, nil
@@ -87,7 +89,7 @@ func main() {
 	}
 
 	rabbitMQServer := os.Getenv("RABBITMQ_SERVER")
-    rabbitMQPort := os.Getenv("RABBITMQ_PORT")
+	rabbitMQPort := os.Getenv("RABBITMQ_PORT")
 	url := fmt.Sprintf("amqp://guest:guest@%s:%s/", rabbitMQServer, rabbitMQPort)
 	rabbit_conn, rabbit_err := amqp.Dial(url)
 
@@ -109,7 +111,13 @@ func main() {
 		twtpercent := float64(interested_users_global) / 2 * 0.2
 		lower_int := int64(float64(interested_users_global)/2 - twtpercent)
 		upper_int := int64(float64(interested_users_global)/2 + twtpercent)
-		SolicitedKeys := rand.Int63n(upper_int-lower_int) + lower_int
+		var SolicitedKeys int64
+		if upper_int-lower_int <= 1 { // If value is too low the rand will crash the program
+			SolicitedKeys = int64(interested_users_global)
+		} else {
+			SolicitedKeys = rand.Int63n(upper_int-lower_int) + lower_int
+		}
+
 		fmt.Println("Hay", SolicitedKeys, "personas interesadas en acceder a la beta")
 		messageBody := fmt.Sprintf("europa,%d", SolicitedKeys)
 		send_mq_err := ch.Publish(
@@ -124,7 +132,7 @@ func main() {
 		)
 
 		if send_mq_err != nil {
-			log.Fatal("no se publicó el mensaje: %v", send_mq_err)
+			log.Fatal("no se publicó el mensaje:", send_mq_err)
 		}
 
 		start_grpc_server() // Wait for UsersNotAdmittedNotify

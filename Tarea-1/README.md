@@ -23,6 +23,8 @@ Correr los siguientes comandos:
 
     `sudo docker run -d --name rabbitmq-container -p 5672:5672 -p 15672:15672 rabbitmq:3-management` 
 
+    `sudo docker run -d --name rabbitmq-container -p 5672:5672 -p 15672:15672 rabbitmq:3-management `    
+
     `sudo docker run -d -p 50053:50053 --name asia-container sofiwi/asia:latest`
 - Para la máquina 2:
 
@@ -51,4 +53,6 @@ Luego:
 
 
 Para correrlo local hay que cambiar todos los puertos de rabbitmq y de grpc a los correspondientes.
-Luego de eso abrir 6 terminales y correr `go run path/to/archivo.go`` en cada una, siguiendo el orden de cola, regionales y luego center
+Luego de eso abrir 6 terminales y correr `go run path/to/archivo.go` en cada una, siguiendo el orden de cola, regionales y luego center
+
+(Tenemos makefile pero las máquinas virtuales no tenían `make` instalado, y no se podía instalar debido a la versión del terminal. De todas formas se adjunta makeflie)
