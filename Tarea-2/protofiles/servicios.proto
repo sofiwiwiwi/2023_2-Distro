@@ -1,0 +1,48 @@
+syntax = "proto3";
+package protofiles;
+option go_package = "Tarea-2/protofiles";
+
+//FORMATO NOMBRE: nombre;apellido 
+
+//mensajes OMS
+//Continente --> OMS: informa nombre de persona y su estado
+message InfoPersonaContinenteReq {
+    string nombre = 1; 
+    bool esInfectado = 2;
+}
+
+message Empty {}
+
+//ONU --> OMS: informa estado de todas las personas
+message InfoPersonasCondicionReq{
+    bool esInfectado = 1;
+}
+message InfoPersonasCondicionResp{
+    repeated string nombres = 1;
+    repeated bool esInfectado = 2; 
+}
+
+//Data Node
+//OMS --> Datanode: solicita nombre de persona de acuerdo al id
+message NombrePersonaReq{
+    int32 id = 1;
+}
+
+message NombrePersonaResp{
+    string nombre = 1;
+}
+
+message DatosIdNombreReq{
+    int32 id = 1;
+    string nombre = 2;
+}
+
+service OMS{
+    rpc sendNombreEstado (InfoPersonaContinenteReq) returns (Empty);
+    rpc askNombres (InfoPersonasCondicionReq) returns (InfoPersonasCondicionResp);
+}
+
+service dataNode{
+    rpc sendIdEstado (DatosIdNombreReq) returns (Empty);
+    rpc askNombreId (NombrePersonaReq) returns (NombrePersonaResp);
+}
