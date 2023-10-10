@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/sofiwi-dev/Tarea-2/protofiles"
+	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles"
 )
 
 func main() {
@@ -16,10 +16,10 @@ func main() {
 		log.Fatal("Can't connect to Asia server: ", err)
 	}
 
-	this_client := pb.NewOMS(conn_OMS)
-	_, l_client_err := this_client.sendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
-		nombre:      "SUS",
-		esInfectado: true,
+	this_client := pb.NewOMSClient(conn_OMS)
+	_, l_client_err := this_client.SendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
+		Nombre:      "SUS",
+		EsInfectado: true,
 	})
 	if l_client_err != nil {
 		log.Fatal("Couldn't send keys to region: ", l_client_err)

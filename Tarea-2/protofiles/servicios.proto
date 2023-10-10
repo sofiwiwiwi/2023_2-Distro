@@ -1,6 +1,6 @@
 syntax = "proto3";
 package protofiles;
-option go_package = "github.com/sofiwiwiwi/2023_2-Distro/tree/sofiwi-dev/Tarea-2/protofiles";
+option go_package = "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles";
 
 //FORMATO NOMBRE: nombre;apellido 
 
