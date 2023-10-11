@@ -19,7 +19,6 @@ message InfoPersonasCondicionReq{
 }
 message InfoPersonasCondicionResp{
     repeated string nombres = 1;
-    repeated bool esInfectado = 2; 
 }
 
 //Data Node
