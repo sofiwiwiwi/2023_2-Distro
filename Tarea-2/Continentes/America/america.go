@@ -16,6 +16,8 @@ import (
 var this_client pb.OMSClient
 
 func LeerArchivo(Estado string) {
+
+	log.Println("entre a la funcion")
 	var f, ar_err = os.Open("DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
@@ -24,7 +26,9 @@ func LeerArchivo(Estado string) {
 	fileScanner.Split(bufio.ScanLines)
 	fileScanner.Scan()
 	i := 1
-	for fileScanner.Scan() {
+	log.Println("no he entrado al for")
+	for (fileScanner.Scan() ){
+		log.Println("entre al for")
 		probabilidad := rand.Float64()
 		var isInfectado bool = probabilidad <= 55
 
@@ -39,6 +43,7 @@ func LeerArchivo(Estado string) {
 		if l_client_err != nil {
 			log.Fatal("Couldn't send message", l_client_err)
 		}
+		log.Println("Te mande la weaaaaaaaaaaaaaaaaaaaa")
 		i++
 	}
 	f.Close()
@@ -52,6 +57,6 @@ func main() {
 	}
 
 	this_client = pb.NewOMSClient(conn_OMS)
-
+	LeerArchivo("mequieromatar")
 	log.Println("Enviado uwu")
 }
