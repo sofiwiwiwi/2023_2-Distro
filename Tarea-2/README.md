@@ -16,3 +16,5 @@
      `'-._____."
 ```
 # Tarea 2
+## Consideraciones
+- Se asume que el `tabsize` es de 4 espacios

@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -43,7 +42,8 @@ func EscribirArchivo(Id int32, Nombre string, Apellido string) {
 	}
 }
 
-func LeerArchivo(Estado bool) {
+func LeerArchivo(Id string) string {
+	var retorno string
 	var f, ar_err = os.Open("clients/parametros_de_inicio.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
@@ -55,13 +55,15 @@ func LeerArchivo(Estado bool) {
 		text := fileScanner.Text()
 		splits := strings.Split(text, "\t")
 
-		Id, err := strconv.ParseInt(splits[0], 0, 0)
-		Id32 := int32(Id)
-		var Nombre string = splits[1]
-		var Apellido string = splits[2]
-
+		Id_leido := splits[0]
+		if Id_leido == Id {
+			var Nombre string = splits[1]
+			var Apellido string = splits[2]
+			retorno = fmt.Sprintf("%s;%s", Nombre, Apellido)
+		}
 	}
 	f.Close()
+	return retorno
 }
 
 // Establish grpc connection.
@@ -72,7 +74,7 @@ func main() {
 		log.Fatal(l_err)
 	}
 
-	listner, s_err := net.Listen("tcp", ":50051")
+	listner, s_err := net.Listen("tcp", ":50053")
 
 	if s_err != nil {
 		log.Fatal("Cant create tcp connection")
