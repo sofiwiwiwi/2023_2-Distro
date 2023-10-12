@@ -14,7 +14,7 @@ import (
 	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles"
 )
 
-var register_f, register_err = os.Create("DATA.txt")
+var register_f, register_err = os.Create("DataNodes/DataNode2/DATA.txt")
 
 type server struct {
 	pb.UnimplementedDataNodeServer
@@ -22,6 +22,10 @@ type server struct {
 
 func (s *server) SendIdEstado(ctx context.Context, req *pb.DatosIdNombreReq) (*pb.Empty, error) {
 	log.Println(req.Nombre, req.Id)
+	NombreCompleto := strings.Split(req.Nombre, ";")
+	Nombre := NombreCompleto[0]
+	Apellido := NombreCompleto[1]
+	EscribirArchivo(req.Id, Nombre, Apellido)
 	return &pb.Empty{}, nil
 }
 
