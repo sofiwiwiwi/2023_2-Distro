@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 
 	"google.golang.org/grpc"
 
@@ -16,7 +17,9 @@ import (
 
 var dataNode1_client pb.DataNodeClient
 var dataNode2_client pb.DataNodeClient
+
 var idActual = int32(0)
+var idMu sync.Mutex
 
 type server struct {
 	pb.UnimplementedOMSServer
@@ -24,6 +27,8 @@ type server struct {
 
 func (s *server) SendNombreEstado(ctx context.Context, req *pb.InfoPersonaContinenteReq) (*pb.Empty, error) {
 	//asumiendo que aca es donde se recibe la info de los continentes, caso contrario mover hasta la estrellita
+	idMu.Lock()
+	idActual += 1
 	apellido := strings.Split(req.Nombre, ";")[1]
 	var dataNodeEscritura int32
 	if apellido[0] >= 'A' && apellido[0] <= 'M' {
@@ -51,7 +56,8 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 	}
 	defer archivo.Close()
 
-	linea := fmt.Sprintf("%d \t dataNode%d \t %s \t %v\n", idActual, dataNode, Nombre, Estado)
+	linea := fmt.Sprintf("%d \t %d \t %v\n", idActual, dataNode, Estado)
+	idMu.Unlock()
 	_, err = archivo.WriteString(linea)
 	if err != nil {
 		log.Fatal(err)
@@ -74,13 +80,12 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 			log.Fatal("Couldn't send message", l_client_err)
 		}
 	}
-	idActual++ //para que sea unicoco
 }
 
 // recordar estructura de archivo:
 // ID    dataNodex    nombre;apellido    Estado
 func LeerArchivo() {
-	archivo, err := os.Open("DATA.txt")
+	archivo, err := os.Open("OMS/DATA.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

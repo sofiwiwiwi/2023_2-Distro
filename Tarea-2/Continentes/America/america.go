@@ -33,7 +33,8 @@ func LeerArchivo() {
 			time.Sleep(3)
 		}
 		text := fileScanner.Text()
-		Nombre_formateado := strings.ReplaceAll(text, "    ", ";")
+		Nombre_formateado := strings.ReplaceAll(text, " ", ";")
+		log.Println(Nombre_formateado)
 		_, l_client_err := this_client.SendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
 			Nombre:      Nombre_formateado,
 			EsInfectado: isInfectado,

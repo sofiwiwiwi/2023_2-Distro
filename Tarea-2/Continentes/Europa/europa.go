@@ -29,7 +29,7 @@ func LeerArchivo(Estado string) {
 		var isInfectado bool = probabilidad <= 55
 
 		if i > 5 {
-			time.Sleep(3)
+			time.Sleep(3 * time.Second)
 		}
 		text := fileScanner.Text()
 		_, l_client_err := this_client.SendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
