@@ -37,6 +37,7 @@ func (s *server) SendNombreEstado(ctx context.Context, req *pb.InfoPersonaContin
 		dataNodeEscritura = 2
 	}
 	EscribirArchivo(dataNodeEscritura, req.Nombre, req.EsInfectado) // esInfectado=0 cuando ta morto      estrellita
+	idMu.Unlock()
 	return &pb.Empty{}, nil
 }
 
@@ -57,7 +58,6 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 	defer archivo.Close()
 
 	linea := fmt.Sprintf("%d \t %d \t %v\n", idActual, dataNode, Estado)
-	idMu.Unlock()
 	_, err = archivo.WriteString(linea)
 	if err != nil {
 		log.Fatal(err)

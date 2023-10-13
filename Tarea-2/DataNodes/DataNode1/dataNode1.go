@@ -46,7 +46,7 @@ func EscribirArchivo(Id int32, Nombre string, Apellido string) {
 	}
 }
 
-func LeerArchivo(Id string) string {
+func LeerArchivo(Id string) string { //INUTIL
 	var retorno string
 	var f, ar_err = os.Open("clients/parametros_de_inicio.txt")
 	if ar_err != nil {
