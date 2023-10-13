@@ -21,6 +21,8 @@ var dataNode2_client pb.DataNodeClient
 var idActual = int32(0)
 var idMu sync.Mutex
 
+var archivo, err = os.Create("OMS/DATA.txt")
+
 type server struct {
 	pb.UnimplementedOMSServer
 }
@@ -51,13 +53,14 @@ func (s *server) AskNombres(ctx context.Context, req *pb.InfoPersonasCondicionRe
 
 // probablemente como el acceso al archivo sera compartido por varios procesos es buena idea revisar lo que me dijo el gabo -> peor caso chantarle una goroutine
 func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
-	archivo, err := os.OpenFile("OMS/DATA.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
+	var esc_estado string
+	if Estado {
+		esc_estado = "Infectado"
+	} else {
+		esc_estado = "Muerto"
 	}
-	defer archivo.Close()
 
-	linea := fmt.Sprintf("%d \t %d \t %v\n", idActual, dataNode, Estado)
+	linea := fmt.Sprintf("%d \t %d \t %v\n", idActual, dataNode, esc_estado)
 	_, err = archivo.WriteString(linea)
 	if err != nil {
 		log.Fatal(err)
@@ -115,6 +118,12 @@ func LeerArchivo() {
 
 // Establish grpc connection.
 func main() {
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer archivo.Close()
+	archivo.WriteString("ID \t DataNode \t Status\n")
+
 	conn_dN1, err := grpc.Dial(":50052", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal("Can't connect to OMS server: ", err)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -15,8 +16,8 @@ import (
 
 var this_client pb.OMSClient
 
-func LeerArchivo(Estado string) {
-	var f, ar_err = os.Open("DATA.txt")
+func LeerArchivo() {
+	var f, ar_err = os.Open("Continentes/Asia/DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
 	}
@@ -28,17 +29,27 @@ func LeerArchivo(Estado string) {
 		probabilidad := rand.Float64()
 		var isInfectado bool = probabilidad <= 55
 
+		var esc_estado string
+		if isInfectado {
+			esc_estado = "Infectado"
+		} else {
+			esc_estado = "Muerto"
+		}
+
 		if i > 5 {
-			time.Sleep(3 * time.Second)
+			time.Sleep(3)
 		}
 		text := fileScanner.Text()
+		Nombre_formateado := strings.ReplaceAll(text, " ", ";")
+
 		_, l_client_err := this_client.SendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
-			Nombre:      text,
+			Nombre:      Nombre_formateado,
 			EsInfectado: isInfectado,
 		})
 		if l_client_err != nil {
 			log.Fatal("Couldn't send message", l_client_err)
 		}
+		log.Printf("Estado enviado: %s %s\n", text, esc_estado)
 		i++
 	}
 	f.Close()
@@ -53,5 +64,5 @@ func main() {
 
 	this_client = pb.NewOMSClient(conn_OMS)
 
-	log.Println("Enviado uwu")
+	LeerArchivo()
 }
