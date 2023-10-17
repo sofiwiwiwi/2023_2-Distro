@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"strconv"
 
 	"google.golang.org/grpc"
 
@@ -30,16 +31,19 @@ func (s *server) SendIdEstado(ctx context.Context, req *pb.DatosIdNombreReq) (*p
 }
 
 func (s *server) AskNombreId(ctx context.Context, req *pb.NombrePersonaReq) (*pb.NombrePersonaResp, error) {
-	log.Println(req.Id)
+	strId := strconv.Itoa(int(req.Id))
+	fmt.Println("recibi una weaaaaaaaaa")
+	var nombreRespuestin = LeerArchivo(strId)
+	fmt.Println("procesé una weaaaaaaaaa")
 	return &pb.NombrePersonaResp{
-		Nombre: "Slaaaaay",
+		Nombre: nombreRespuestin,
 	}, nil
 
 }
 
 func EscribirArchivo(Id int32, Nombre string, Apellido string) {
 	//escritura de archivos
-	var linea = fmt.Sprintf("%d \t %s \t %s\n", Id, Nombre, Apellido)
+	var linea = fmt.Sprintf("%d    %s    %s\n", Id, Nombre, Apellido)
 	var _, l_err = register_f.WriteString(linea)
 	if l_err != nil {
 		log.Fatal(l_err)
@@ -48,7 +52,7 @@ func EscribirArchivo(Id int32, Nombre string, Apellido string) {
 
 func LeerArchivo(Id string) string { //INUTIL
 	var retorno string
-	var f, ar_err = os.Open("clients/parametros_de_inicio.txt")
+	var f, ar_err = os.Open("DataNodes/DataNode1/DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
 	}
@@ -57,8 +61,7 @@ func LeerArchivo(Id string) string { //INUTIL
 	fileScanner.Scan()
 	for fileScanner.Scan() {
 		text := fileScanner.Text()
-		splits := strings.Split(text, "\t")
-
+		splits := strings.Split(text, "    ")
 		Id_leido := splits[0]
 		if Id_leido == Id {
 			var Nombre string = splits[1]
@@ -73,7 +76,7 @@ func LeerArchivo(Id string) string { //INUTIL
 // Establish grpc connection.
 func main() {
 	defer register_f.Close()
-	var _, l_err = register_f.WriteString("ID \t Nombre \t Apellido \n")
+	var _, l_err = register_f.WriteString("ID    Nombre    Apellido\n")
 	if l_err != nil {
 		log.Fatal(l_err)
 	}

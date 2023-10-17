@@ -27,7 +27,7 @@ func LeerArchivo() {
 	i := 1
 	for fileScanner.Scan() {
 		probabilidad := rand.Float64()
-		var isInfectado bool = probabilidad <= 55
+		var isInfectado bool = probabilidad <= 0.55
 
 		var esc_estado string
 		if isInfectado {
@@ -37,7 +37,7 @@ func LeerArchivo() {
 		}
 
 		if i > 5 {
-			time.Sleep(3)
+			time.Sleep(3) //recordar cambiar esta wea bien al final
 		}
 		text := fileScanner.Text()
 		Nombre_formateado := strings.ReplaceAll(text, " ", ";")

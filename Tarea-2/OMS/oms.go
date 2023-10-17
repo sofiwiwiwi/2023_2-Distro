@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"strconv"
 
 	"google.golang.org/grpc"
 
@@ -44,8 +45,9 @@ func (s *server) SendNombreEstado(ctx context.Context, req *pb.InfoPersonaContin
 }
 
 func (s *server) AskNombres(ctx context.Context, req *pb.InfoPersonasCondicionReq) (*pb.InfoPersonasCondicionResp, error) {
+	ret := LeerArchivo(req.EsInfectado)
 	return &pb.InfoPersonasCondicionResp{
-		Nombres: []string{"JuanCarlos;Bodoque", "SofiGaboJavier;Slay"},
+		Nombres: ret,
 	}, nil
 	//HACER UN CHANNEL
 
@@ -60,7 +62,7 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 		esc_estado = "Muerto"
 	}
 
-	linea := fmt.Sprintf("%d \t %d \t %v\n", idActual, dataNode, esc_estado)
+	linea := fmt.Sprintf("%d    %d    %v\n", idActual, dataNode, esc_estado)
 	_, err = archivo.WriteString(linea)
 	if err != nil {
 		log.Fatal(err)
@@ -85,44 +87,68 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 	}
 }
 
-// recordar estructura de archivo:
-// ID    dataNodex    nombre;apellido    Estado
-func LeerArchivo() {
+//------------------------------------------------
+// recordar estructura de archivo:				  |
+// ID    dataNodex    nombre;apellido    Estado   |
+//------------------------------------------------
+// basicamente aca recibimos la consulta de la onu, asi que tiene que consultar al datanode weon por weon
+// revisar archivo linea por linea y mandar consulta weeeeeeeee
+func LeerArchivo(estado bool) []string {
+	var estadoStr string
+	var retorno []string
+	if estado {
+		estadoStr = "Infectado"
+	} else {
+		estadoStr = "Muerto"
+	}
 	archivo, err := os.Open("OMS/DATA.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer archivo.Close()
 	scanner := bufio.NewScanner(archivo)
+	scanner.Scan()
 	for scanner.Scan() {
 		linea := scanner.Text()
-		a := strings.Split(linea, "\t")
-		log.Println(a) //esta wea es pa que no webee por las variables no usadas nomas
-
-		//enviar a ONU, no se como lo haremos aun, por eso no esta hecho :p
-		/*
-		   _, l_client_err := this_client.SendNombreEstado(context.Background(), &pb.InfoPersonaContinenteReq{
-		       Nombre:      Nombre,
-		       EsInfectado: Estado,
-		   })
-		   if l_client_err != nil {
-		       log.Fatal("Couldn't send message", l_client_err)
-		   }*/
-
+		persona := strings.Split(linea, "    ")
+		idStr := persona[0]
+		dataNodeStr := persona[1]
+		estadoRecibido := persona[2]
+		idInt, err := strconv.Atoi(idStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if estadoRecibido == estadoStr {
+			fmt.Println("TOY MANdando a buscar", estadoStr)
+			var ans *pb.NombrePersonaResp
+			var l_client_err error
+			if dataNodeStr == "1" {
+				ans, l_client_err = dataNode1_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
+					Id: int32(idInt),
+				})
+			} else {
+				ans, l_client_err = dataNode2_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
+					Id: int32(idInt),
+				})
+			}
+			if l_client_err != nil {
+				log.Fatal("Couldn't send message", l_client_err)
+			}
+			retorno = append(retorno, ans.Nombre)
+		}
 	}
-
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+	return retorno
 }
-
 // Establish grpc connection.
 func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer archivo.Close()
-	archivo.WriteString("ID \t DataNode \t Status\n")
+	archivo.WriteString("ID    DataNode    Status\n")
 
 	conn_dN1, err := grpc.Dial(":50052", grpc.WithInsecure())
 	if err != nil {
