@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"strconv"
 
 	"google.golang.org/grpc"
 
@@ -16,6 +15,7 @@ import (
 )
 
 var register_f, register_err = os.Create("DataNodes/DataNode1/DATA.txt")
+var dataMap = make(map[int32]string) //3: juan perez
 
 type server struct {
 	pb.UnimplementedDataNodeServer
@@ -27,14 +27,21 @@ func (s *server) SendIdEstado(ctx context.Context, req *pb.DatosIdNombreReq) (*p
 	Nombre := NombreCompleto[0]
 	Apellido := NombreCompleto[1]
 	EscribirArchivo(req.Id, Nombre, Apellido)
+	dataMap[req.Id] = req.Nombre
 	return &pb.Empty{}, nil
 }
 
 func (s *server) AskNombreId(ctx context.Context, req *pb.NombrePersonaReq) (*pb.NombrePersonaResp, error) {
-	strId := strconv.Itoa(int(req.Id))
-	fmt.Println("recibi una weaaaaaaaaa")
-	var nombreRespuestin = LeerArchivo(strId)
-	fmt.Println("procesé una weaaaaaaaaa")
+	
+	//strId := strconv.Itoa(int(req.Id))
+	//var nombreRespuestin = LeerArchivo(strId) //para archivo
+	
+	nombreRespuestin, found := dataMap[req.Id] //para map
+
+    if !found {
+        nombreRespuestin = "No encontrado"
+    }
+
 	return &pb.NombrePersonaResp{
 		Nombre: nombreRespuestin,
 	}, nil
@@ -66,7 +73,7 @@ func LeerArchivo(Id string) string { //INUTIL
 		if Id_leido == Id {
 			var Nombre string = splits[1]
 			var Apellido string = splits[2]
-			retorno = fmt.Sprintf("%s;%s", Nombre, Apellido)
+			retorno = fmt.Sprintf("%s;%s", Nombre, Apellido)//lo devuelve en el formato, se puede cambiar
 		}
 	}
 	f.Close()

@@ -108,6 +108,9 @@ func LeerArchivo(estado bool) []string {
 	defer archivo.Close()
 	scanner := bufio.NewScanner(archivo)
 	scanner.Scan()
+
+	var wg sync.WaitGroup
+	encontradosChan := make(chan string) 	
 	for scanner.Scan() {
 		linea := scanner.Text()
 		persona := strings.Split(linea, "    ")
@@ -119,23 +122,33 @@ func LeerArchivo(estado bool) []string {
 			log.Fatal(err)
 		}
 		if estadoRecibido == estadoStr {
-			fmt.Println("TOY MANdando a buscar", estadoStr)
-			var ans *pb.NombrePersonaResp
-			var l_client_err error
-			if dataNodeStr == "1" {
-				ans, l_client_err = dataNode1_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
-					Id: int32(idInt),
-				})
-			} else {
-				ans, l_client_err = dataNode2_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
-					Id: int32(idInt),
-				})
-			}
-			if l_client_err != nil {
-				log.Fatal("Couldn't send message", l_client_err)
-			}
-			retorno = append(retorno, ans.Nombre)
+			wg.Add(1)
+			go func(){
+				defer wg.Done()
+				var ans *pb.NombrePersonaResp
+				var l_client_err error
+				if dataNodeStr == "1" {
+					ans, l_client_err = dataNode1_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
+						Id: int32(idInt),
+					})
+				} else {
+					ans, l_client_err = dataNode2_client.AskNombreId(context.Background(), &pb.NombrePersonaReq{
+						Id: int32(idInt),
+					})
+				}
+				if l_client_err != nil {
+					log.Fatal("Couldn't send message", l_client_err)
+				}
+				encontradosChan <- ans.Nombre
+			}()
 		}
+	}
+	go func(){
+		wg.Wait()
+		close(encontradosChan)
+	}()
+	for nombreEncontrado := range encontradosChan{
+		retorno = append(retorno, nombreEncontrado)
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

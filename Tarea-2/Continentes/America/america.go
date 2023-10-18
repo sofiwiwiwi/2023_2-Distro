@@ -37,7 +37,7 @@ func LeerArchivo() {
 		}
 
 		if i > 5 {
-			time.Sleep(3) //recordar cambiar esta wea bien al final
+			time.Sleep(3*time.Second) //recordar cambiar esta wea bien al final
 		}
 		text := fileScanner.Text()
 		Nombre_formateado := strings.ReplaceAll(text, " ", ";")
