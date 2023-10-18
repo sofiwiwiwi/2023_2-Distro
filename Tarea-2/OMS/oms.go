@@ -7,9 +7,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
-	"strconv"
 
 	"google.golang.org/grpc"
 
@@ -40,12 +40,17 @@ func (s *server) SendNombreEstado(ctx context.Context, req *pb.InfoPersonaContin
 		dataNodeEscritura = 2
 	}
 	EscribirArchivo(dataNodeEscritura, req.Nombre, req.EsInfectado) // esInfectado=0 cuando ta morto      estrellita
+	fmt.Printf("Solicitud de Continente recibida, mensaje enviado: Mensaje Vacío\n")
 	idMu.Unlock()
 	return &pb.Empty{}, nil
 }
 
 func (s *server) AskNombres(ctx context.Context, req *pb.InfoPersonasCondicionReq) (*pb.InfoPersonasCondicionResp, error) {
 	ret := LeerArchivo(req.EsInfectado)
+	fmt.Printf("Solicitud de ONU recibida, mensaje enviado:\n")
+	for _, element := range ret {
+		fmt.Printf(element + "\n")
+	}
 	return &pb.InfoPersonasCondicionResp{
 		Nombres: ret,
 	}, nil
@@ -87,10 +92,10 @@ func EscribirArchivo(dataNode int32, Nombre string, Estado bool) {
 	}
 }
 
-//------------------------------------------------
+// ------------------------------------------------
 // recordar estructura de archivo:				  |
 // ID    dataNodex    nombre;apellido    Estado   |
-//------------------------------------------------
+// ------------------------------------------------
 // basicamente aca recibimos la consulta de la onu, asi que tiene que consultar al datanode weon por weon
 // revisar archivo linea por linea y mandar consulta weeeeeeeee
 func LeerArchivo(estado bool) []string {
@@ -110,7 +115,7 @@ func LeerArchivo(estado bool) []string {
 	scanner.Scan()
 
 	var wg sync.WaitGroup
-	encontradosChan := make(chan string) 	
+	encontradosChan := make(chan string)
 	for scanner.Scan() {
 		linea := scanner.Text()
 		persona := strings.Split(linea, "    ")
@@ -123,7 +128,7 @@ func LeerArchivo(estado bool) []string {
 		}
 		if estadoRecibido == estadoStr {
 			wg.Add(1)
-			go func(){
+			go func() {
 				defer wg.Done()
 				var ans *pb.NombrePersonaResp
 				var l_client_err error
@@ -143,11 +148,11 @@ func LeerArchivo(estado bool) []string {
 			}()
 		}
 	}
-	go func(){
+	go func() {
 		wg.Wait()
 		close(encontradosChan)
 	}()
-	for nombreEncontrado := range encontradosChan{
+	for nombreEncontrado := range encontradosChan {
 		retorno = append(retorno, nombreEncontrado)
 	}
 	if err := scanner.Err(); err != nil {
@@ -155,6 +160,7 @@ func LeerArchivo(estado bool) []string {
 	}
 	return retorno
 }
+
 // Establish grpc connection.
 func main() {
 	if err != nil {

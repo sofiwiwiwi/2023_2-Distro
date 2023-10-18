@@ -32,16 +32,17 @@ func (s *server) SendIdEstado(ctx context.Context, req *pb.DatosIdNombreReq) (*p
 }
 
 func (s *server) AskNombreId(ctx context.Context, req *pb.NombrePersonaReq) (*pb.NombrePersonaResp, error) {
-	
+
 	//strId := strconv.Itoa(int(req.Id))
 	//var nombreRespuestin = LeerArchivo(strId) //para archivo
-	
+
 	nombreRespuestin, found := dataMap[req.Id] //para map
 
-    if !found {
-        nombreRespuestin = "No encontrado"
-    }
+	if !found {
+		nombreRespuestin = "No encontrado"
+	}
 
+	fmt.Printf("Solicitud de NameNode recibida, mensaje enviado: %s\n", nombreRespuestin)
 	return &pb.NombrePersonaResp{
 		Nombre: nombreRespuestin,
 	}, nil
@@ -73,7 +74,7 @@ func LeerArchivo(Id string) string { //INUTIL
 		if Id_leido == Id {
 			var Nombre string = splits[1]
 			var Apellido string = splits[2]
-			retorno = fmt.Sprintf("%s;%s", Nombre, Apellido)//lo devuelve en el formato, se puede cambiar
+			retorno = fmt.Sprintf("%s;%s", Nombre, Apellido) //lo devuelve en el formato, se puede cambiar
 		}
 	}
 	f.Close()
