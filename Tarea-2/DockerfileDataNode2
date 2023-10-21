@@ -17,7 +17,7 @@ RUN go mod init Tarea-2
 RUN go mod tidy
 
 # Build the Go application
-RUN go build -o dataNode1
+RUN go build -o dataNode2
 
 
 # Specify the command to run when the container starts

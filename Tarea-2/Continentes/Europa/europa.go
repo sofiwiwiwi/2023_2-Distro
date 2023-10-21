@@ -17,7 +17,7 @@ import (
 var this_client pb.OMSClient
 
 func LeerArchivo() {
-	var f, ar_err = os.Open("DATA.txt")
+	var f, ar_err = os.Open("Europa/DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
 	}
@@ -37,7 +37,7 @@ func LeerArchivo() {
 		}
 
 		if i > 5 {
-			time.Sleep(3)
+			time.Sleep(3 * time.Second)
 		}
 		text := fileScanner.Text()
 		Nombre_formateado := strings.ReplaceAll(text, " ", ";")

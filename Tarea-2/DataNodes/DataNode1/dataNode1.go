@@ -59,7 +59,7 @@ func EscribirArchivo(Id int32, Nombre string, Apellido string) {
 
 func LeerArchivo(Id string) string { //INUTIL
 	var retorno string
-	var f, ar_err = os.Open("DataNodes/DataNode1/DATA.txt")
+	var f, ar_err = os.Open("DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
 	}

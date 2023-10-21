@@ -176,7 +176,7 @@ func main() {
 
 	dataNode1_client = pb.NewDataNodeClient(conn_dN1)
 
-	conn_dN2, err := grpc.Dial("dist046.inf.santiago.usm.cl:50051:50053", grpc.WithInsecure())
+	conn_dN2, err := grpc.Dial("dist046.inf.santiago.usm.cl:50053", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal("Can't connect to OMS server: ", err)
 	}
