@@ -13,7 +13,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles"
+	pb "Tarea-2/protofiles"
 )
 
 var dataNode1_client pb.DataNodeClient
@@ -22,7 +22,7 @@ var dataNode2_client pb.DataNodeClient
 var idActual = int32(0)
 var idMu sync.Mutex
 
-var archivo, err = os.Create("OMS/DATA.txt")
+var archivo, err = os.Create("DATA.txt")
 
 type server struct {
 	pb.UnimplementedOMSServer
@@ -106,7 +106,7 @@ func LeerArchivo(estado bool) []string {
 	} else {
 		estadoStr = "Muerto"
 	}
-	archivo, err := os.Open("OMS/DATA.txt")
+	archivo, err := os.Open("DATA.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,14 +169,14 @@ func main() {
 	defer archivo.Close()
 	archivo.WriteString("ID    DataNode    Status\n")
 
-	conn_dN1, err := grpc.Dial(":50052", grpc.WithInsecure())
+	conn_dN1, err := grpc.Dial("dist045.inf.santiago.usm.cl:50052", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal("Can't connect to OMS server: ", err)
 	}
 
 	dataNode1_client = pb.NewDataNodeClient(conn_dN1)
 
-	conn_dN2, err := grpc.Dial(":50053", grpc.WithInsecure())
+	conn_dN2, err := grpc.Dial("dist046.inf.santiago.usm.cl:50051:50053", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal("Can't connect to OMS server: ", err)
 	}

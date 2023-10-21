@@ -11,13 +11,13 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles"
+	pb "Tarea-2/protofiles"
 )
 
 var this_client pb.OMSClient
 
 func LeerArchivo() {
-	var f, ar_err = os.Open("Continentes/Asia/DATA.txt")
+	var f, ar_err = os.Open("Continentes/Oceania/DATA.txt")
 	if ar_err != nil {
 		log.Fatal(ar_err)
 	}
@@ -57,7 +57,7 @@ func LeerArchivo() {
 
 func main() {
 	//conexion a OMS
-	conn_OMS, err := grpc.Dial(":50051", grpc.WithInsecure())
+	conn_OMS, err := grpc.Dial("dist048.inf.santiago.usm.cl:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal("Can't connect to OMS server: ", err)
 	}

@@ -11,10 +11,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/sofiwiwiwi/2023_2-Distro/tree/main/Tarea-2/protofiles"
+	pb "Tarea-2/protofiles"
 )
 
-var register_f, register_err = os.Create("DataNodes/DataNode1/DATA.txt")
+var register_f, register_err = os.Create("DATA.txt")
 var dataMap = make(map[int32]string) //3: juan perez
 
 type server struct {
