@@ -28,4 +28,4 @@ docker-europa:
 
 docker-oceania:
 	sudo docker pull sofiwi/oceania
-	sudo docker run -d --name oceania-container sofiwi/oceania:latest
+	sudo docker run -d -it --name oceania-container sofiwi/oceania:latest
