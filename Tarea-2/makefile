@@ -27,5 +27,5 @@ docker-europa:
 	sudo docker run -d --name europa-container sofiwi/europa:latest
 
 docker-oceania:
-|	sudo docker pull sofiwi/oceania
+	sudo docker pull sofiwi/oceania
 	sudo docker run -d --name oceania-container sofiwi/oceania:latest
