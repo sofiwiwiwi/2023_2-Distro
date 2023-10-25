@@ -1,6 +1,6 @@
 docker-ONU:
 	sudo docker pull sofiwi/onu
-	sudo docker run -d --name onu-container sofiwi/onu:latest
+	sudo docker run -d -it --name onu-container sofiwi/onu:latest
 
 docker-OMS:
 	sudo docker pull sofiwi/oms
@@ -28,4 +28,4 @@ docker-europa:
 
 docker-oceania:
 	sudo docker pull sofiwi/oceania
-	sudo docker run -d -it --name oceania-container sofiwi/oceania:latest
+	sudo docker run -d --name oceania-container sofiwi/oceania:latest
