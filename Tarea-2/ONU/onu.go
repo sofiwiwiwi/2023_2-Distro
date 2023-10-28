@@ -20,6 +20,7 @@ func main() {
 	var input string
 	input = "INICIAL"
 	for input != "q" {
+		startTime := time.Now()
 		fmt.Println("ingrese tipo de consulta: m(muertos), i(infectados), q(terminar programa)")
 		fmt.Scanln(&input)
 		if input == "m" {
@@ -29,6 +30,8 @@ func main() {
 			if l_client_err != nil {
 				log.Fatal("Couldn't send message", l_client_err)
 			}
+			elapsed := time.Since(startTime)
+			fmt.Printf("Tardó: %s\n", elapsed)
 			for _, item := range ans.Nombres {
 				fmt.Println(item)
 			}
@@ -39,6 +42,8 @@ func main() {
 			if l_client_err != nil {
 				log.Fatal("Couldn't send message", l_client_err)
 			}
+			elapsed := time.Since(startTime)
+			fmt.Printf("Tardó: %s\n", elapsed)
 			for _, item := range ans.Nombres {
 				fmt.Println(item)
 			}
